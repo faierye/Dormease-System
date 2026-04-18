@@ -1,0 +1,160 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    height: 100vh;
+    background: url("/static/image/bg.png") no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
+}
+
+/* Gradient overlay */
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(52, 50, 199, 0.85),
+        rgba(0, 0, 0, 0.85)
+    );
+    z-index: 1;
+}
+
+/* Container */
+.container {
+    width: 90%;
+    height: 85vh;
+    margin: 30px auto;
+    border-radius: 10px;
+    overflow: hidden;
+
+    background: rgba(0, 0, 0, 0.2); /* ✅ cleaner glass look */
+    backdrop-filter: blur(5px);
+
+    color: white;
+    position: relative;
+    z-index: 1;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo img {
+    width: 50px;
+}
+
+.logo h2 {
+    font-size: 20px;
+}
+
+.logo p {
+    font-size: 12px;
+}
+
+.admin {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.admin i {
+    font-size: 20px;
+    background: white;
+    color: black;
+    padding: 8px;
+    border-radius: 50%;
+}
+
+/* Content */
+.content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 75%;
+    padding: 0 60px;
+}
+
+/* Left */
+.left h3 {
+    color: #ffd54f;
+    font-size: 22px;
+}
+
+.left h1 {
+    font-size: 70px;
+    color: #ffd54f;
+    margin: 10px 0;
+}
+
+.left p {
+    font-size: 22px;
+}
+
+/* Card */
+.card {
+    width: 320px;
+    padding: 30px;
+    border-radius: 20px;
+
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+.card h3 {
+    margin-bottom: 20px;
+}
+
+.card button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 25px;
+    background: #3f3dbf;
+    color: #ffd54f;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.card button:hover {
+    background: #2c2aa0;
+}
+
+.card hr {
+    margin: 25px 0;
+    border: 0.5px solid rgba(255,255,255,0.4);
+}
+
+.inq {
+    margin-bottom: 15px;
+}
+
+.icons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.icons i {
+    font-size: 20px;
+}

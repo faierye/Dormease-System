@@ -1,0 +1,145 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    height: 100vh;
+    background: url("/static/image/bg.png") no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
+}
+
+/* Gradient overlay */
+body::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(52, 50, 199, 0.85),
+        rgba(0, 0, 0, 0.85)
+    );
+    z-index: 0;
+}
+
+/* Centering container */
+.container {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Glass Form */
+.form-box {
+    width: 360px;
+    padding: 35px;
+
+    background: rgba(255, 255, 255, 0.24); /* ⭐ 24% transparency */
+    border-radius: 20px;
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+/* Title */
+.title {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.avatar {
+    font-size: 40px;
+    margin-bottom: 5px;
+}
+
+.title h2 {
+    color: white;
+    font-weight: 500;
+}
+
+/* Labels */
+label {
+    font-size: 14px;
+    color: #e0e0ff;
+}
+
+/* Icon */
+.icon i {
+    font-size: 40px;
+    color: #dcdcff;
+}
+
+/* Input group */
+.input-group {
+    display: flex;
+    align-items: center;
+    background: #4b47b8;
+    margin: 8px 0 18px;
+    padding: 12px 15px;
+    border-radius: 30px; /* ⭐ pill shape */
+}
+
+.input-group .icon {
+    margin-right: 10px;
+    color: #dcdcff;
+}
+
+.input-group input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    color: white;
+    font-size: 14x;
+}
+
+/* Placeholder */
+input::placeholder {
+    color: #cfcfff;
+}
+
+/* Forgot */
+.forgot {
+    text-align: right;
+    margin-bottom: 15px;
+}
+
+.forgot a {
+    font-size: 12px;
+    color: #cfcfff;
+    text-decoration: none;
+}
+
+/* Button */
+button {
+    width: 100%;
+    background: #f5d45c;
+    color: black;
+    border: none;
+    padding: 12px;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #e6c24f;
+}
+
+/* Error */
+.error {
+    color: #ff6b6b;
+    text-align: center;
+    margin-bottom: 10px;
+}
