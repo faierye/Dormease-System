@@ -1,0 +1,218 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    background: #eaeaea;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(255, 245, 180, 0.9),
+        rgba(255, 255, 255, 0.9)
+    );
+    z-index: -1;
+}
+
+/* Header */
+.header {
+    background: #f2d35d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 25px 20px;
+    position: relative;
+}
+
+.header h1 {
+    color: #3f3dbf;
+}
+
+.logo {
+    position: absolute;
+    left: 20px;
+    height: 70px;
+    width: auto;
+}
+
+/* Container */
+.container {
+    width: 80%;
+    margin: 30px auto;
+}
+
+h2 {
+    margin: 20px 0;
+}
+
+/* Inputs */
+input, select {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #999;
+    background: #eee;
+}
+
+/* Grids */
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+/* Boxes */
+.boxes {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.box {
+    background: #f3e3a5;
+    padding: 20px;
+    border-radius: 20px;
+    width: 50%;
+
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.box input[type="file"] {
+    background: white;
+    padding: 10px;
+}
+
+/* Submit */
+.button-container {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 30px;
+    
+}
+
+button {
+    padding: 12px 30px;
+    background: #3f3dbf;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2c2aa0;
+}
+
+#studentBox,
+#employeeBox {
+    display: none;
+}
+
+select {
+    width: 100%;
+
+    padding: 12px 45px 12px 15px;
+    border-radius: 10px;
+    border: 1px solid #999;
+    background-color: #eee;
+
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    background-image: url("data:image/svg+xml;utf8,<svg fill='%233f3dbf' height='20' viewBox='0 0 20 20' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M5 7l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 16px;
+
+    cursor: pointer;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0,0,0,0.6);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 999;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    width: 320px;
+
+    animation: zoomIn 0.3s ease;
+}
+
+.modal-content.success h2 {
+    color: #4CAF50;
+}
+
+.modal-content.error h2 {
+    color: #e53935;
+}
+
+.modal-content button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.modal-content.success button {
+    background: #4CAF50;
+    color: white;
+}
+
+.modal-content.error button {
+    background: #e53935;
+    color: white;
+}
+/*PREVIEW IMAGE*/
+#studentPreview,
+#employeePreview {
+    display: block;
+    margin: 10px auto;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 2px solid white;
+}
+@keyframes zoomIn {
+    from {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

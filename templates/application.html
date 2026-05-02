@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Application Form</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}">
+
+        <!-- Icons -->
+        <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-rounded/css/uicons-solid-rounded.css">
+    </head>
+    <body>
+
+    <!-- Header -->
+    <div class="header">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo">
+        <h1>Application Form</h1>
+    </div>
+
+    <form method="POST" action="/application" enctype="multipart/form-data">
+
+    <div class="container">
+
+        <!-- PERSONAL INFO -->
+        <h2>Personal Information</h2>
+
+        <div class="grid-4">
+            <input type="text" name="last_name" placeholder="Last Name" required>
+            <input type="text" name="first_name" placeholder="First Name" required>
+            <input type="text" name="middle_name" placeholder="Middle Name">
+            <input type="text" name="extension_name" placeholder="Ext. Name">
+        </div>
+
+        <div class="grid-4">
+            <select name="sex" required>
+                <option value="" disabled selected hidden>Sex</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+            <input type="number" name="age" placeholder="Age" required>
+            <input type="text" name="contact_number" placeholder="Contact Number" required>
+            <input type="email" name="email" placeholder="Email Address">
+        </div>
+
+        <div class="grid-2">
+            <input type="text" name="permanent_address" placeholder="Permanent Address" required>
+            <input type="text" name="current_address" placeholder="Current Address" required>
+        </div>
+
+        <!-- INSTITUTIONAL INFO -->
+        <h2>Institutional Information</h2>
+
+        <select name="applicant_type" id="type" onchange="toggleFields()" required>
+            <option value="">Resident Type</option>
+            <option value="student">Student</option>
+            <option value="employee">Employee</option>
+        </select>
+
+        <div class="boxes">
+
+            <!-- STUDENT -->
+            <div class="box" id="studentBox">
+                <input type="text" name="student_number" placeholder="Student Number">
+                <div class="grid-2">
+                    <select name="program" required>
+                        <option value="" disabled selected hidden>Program</option>
+
+                        <optgroup label="College of Education">
+                            <option value="BEED">Bachelor of Elementary Education (BEED)</option>
+                            <option value="BECEd">Bachelor of Early Childhood Education (BECEd)</option>
+                            <option value="BSNEd">Bachelor of Special Needs Education (BSNEd)</option>
+                            <option value="BTLEd">Bachelor of Technology and Livelihood Education (BTLEd)</option>
+                            <option value="BSED">Bachelor of Secondary Education (BSED)</option>
+                            <option value="BPEd">Bachelor of Physical Education (BPEd)</option>
+                        </optgroup>
+
+                        <optgroup label="College of Arts and Sciences">
+                            <option value="BAEL">Bachelor of Arts in English Language (BAEL)</option>
+                            <option value="BAComm">Bachelor of Arts in Communication (BAComm)</option>
+                            <option value="BAPos">Bachelor of Arts in Political Science (BAPos)</option>
+                            <option value="BSSW">Bachelor of Science in Social Work (BSSW)</option>
+                            <option value="BSIT">Bachelor of Science in Information Technology (BSIT)</option>
+                            <option value="BSBio">Bachelor of Science in Biology (BSBio)</option>
+                            <option value="BLIS">Bachelor of Library and Information Science (BLIS)</option>
+                            <option value="BMME">Bachelor of Music in Music Education (BMME)</option>
+                        </optgroup>
+
+                        <optgroup label="College of Management and Entrepreneurship">
+                            <option value="BSTM">Bachelor of Science in Tourism Management (BSTM)</option>
+                            <option value="BSHM">Bachelor of Science in Hospitality Management (BSHM)</option>
+                            <option value="BSEntrep">Bachelor of Science in Entrepreneurship (BSEntrep)</option>
+                        </optgroup>
+
+                    </select>
+
+                    <select name="year_level" required>
+                        <option value="" disabled selected hidden>Year Level</option>
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year">2nd Year</option>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
+                    </select>
+                </div>
+
+                <label>Enrollment Slip</label>
+                <input type="file" id="studentInput" name="enrollment_slip" accept=".jpg,.png">
+                <img id="studentPreview" class="preview-img" src="#" alt="Image Preview" style="display:none; width:150px; margin-top:10px;">
+            </div>
+
+            <!-- EMPLOYEE -->
+            <div class="box" id="employeeBox">
+                <input type="text" name="employee_number" placeholder="Employee Number">
+                <div class="grid-2">
+                    <input type="text" name="department" placeholder="Department">
+                    <input type="text" name="position" placeholder="Position">
+                </div>
+
+                <label>Certificate of Employment</label>
+                <input type="file" id="employeeInput" name="certificate" accept=".jpg,.png">
+                <img id="employeePreview" class="preview-img" src="#" alt="Image Preview" style="display:none; width:150px; margin-top:10px;">
+            </div>
+
+        </div>
+
+        <div class="button-container">
+            <button type="button" onclick="landingPage()">Back</button>
+            <button type="submit">Submit</button>
+        </div>
+
+    </div>
+
+    {% if success == True %}
+    <div id="modal" class="modal">
+        <div class="modal-content success">
+            <h2>Success!</h2>
+            <p>Thank you, <strong>{{ name }}</strong>. Your application was submitted.</p>
+            <button onclick="closeModal()">OK</button>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if error == True %}
+    <div id="modal" class="modal">
+        <div class="modal-content error">
+            <h2>Error</h2>
+            <p>{{ message }}</p>
+            <button onclick="closeModal()">Try Again</button>
+    </div>
+    </div>
+    {% endif %}
+
+    </form>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+        
+    </body>
+</html>

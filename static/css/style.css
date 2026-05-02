@@ -2,12 +2,12 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Poppins", sans-serif;
+    font-family: 'Segoe UI', sans-serif;
 }
 
 body {
     min-height: 100vh;
-    background: url("/static/image/bg.png") no-repeat center center fixed;
+    background: url("/static/images/bg.png") no-repeat center center fixed;
     background-size: 100%;
     
     position: relative;
@@ -27,14 +27,15 @@ body::before {
     z-index: 0;
 }
 
-/* Centering container */
+/* Centering container - FIXED */
 .container {
     position: relative;
     z-index: 1;
-    min-height: 105vh;
+    min-height: 100vh; /* CHANGED: was 105vh */
     display: flex;
     justify-content: center;
     align-items: center;
+    padding-top: 150px; /* ADDED: space for fixed header */
 }
 
 /* Glass Form */
@@ -101,7 +102,7 @@ label {
     background: transparent;
     width: 100%;
     color: white;
-    font-size: 14x;
+    font-size: 14px;
 }
 
 /* Placeholder */
@@ -148,4 +149,72 @@ button:hover {
     color: #ff6b6b;
     text-align: center;
     margin-bottom: 10px;
+}
+
+/* HEADER - FIXED */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 30px 80px 0 80px; 
+    margin-top: 0px;          
+
+    position: fixed;  /* ADDED */
+    top: 0;           /* ADDED */
+    left: 0;          /* ADDED */
+    right: 0;         /* ADDED */
+    z-index: 1000;    /* ADDED */
+}
+
+/* LOGO */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo img {
+    width: 100px;
+    height: auto;
+    object-fit: contain;
+}
+
+.logo h2 {
+    font-size: 20px;
+    color: white;
+}
+
+.logo p {
+    font-size: 12px;
+    color: white;
+}
+
+.logo-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.password-group {
+    position: relative;
+}
+
+.password-group i {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;        /* 👈 important (your bg is dark) */
+    font-size: 18px;
+    cursor: pointer;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+#togglePassword {
+    cursor: pointer;
+    pointer-events: auto;
 }

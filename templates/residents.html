@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DormEase Residents</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/residents.css') }}">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+<!-- YOUR EXACT SIDEBAR/TOPBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="logo">
+        <i class="fi fi-rr-menu-burger" id="menu-btn"></i>
+        <div class="logo-text">
+            <h2>DormEase</h2>
+            <span>Admin</span>
+        </div>
+    </div>
+    <ul class="menu">
+        <li >
+            <a href="/dashboard">
+            <i class="fi fi-rr-apps"></i>
+            <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="active">
+            <a href="/residents">
+                <i class="fi fi-rr-user"></i>
+                <span>Residents</span>
+            </a>
+        </li>
+        <li>
+            <a href="/applications">
+                <i class="fi fi-rr-document"></i> 
+                <span>Applications</span>
+            </a>
+        </li>
+        <li>
+            <a href="/rooms">
+                <i class="fi fi-rr-bed"></i> 
+                <span>Room & Beds</span>
+            </a>
+        </li>
+        <li>
+            <a href="/payments">
+                <i class="fi fi-rr-money"></i> 
+                <span>Payments</span>
+            </a>
+        </li>
+        <li>
+            <a href="/settings">
+                <i class="fi fi-rr-settings"></i> 
+                <span>Settings</span>
+            </a>
+        </li>
+    </ul>
+    <div class="logout">
+        <a href="/" class="logout-link">
+            <i class="fi fi-rr-sign-out"></i> 
+            <span>Logout</span>
+        </a>
+    </div>
+</div>
+<div class="container">
+
+    <!-- Main Content -->
+    <div class="main">
+
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>Residents</h1>
+            </div>
+            <div class="top-icons">
+                <i class="fi fi-rr-bell"></i>
+                <i class="fi fi-rr-envelope"></i>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-group">
+                <i class="fi fi-rr-filter"></i>
+
+                <select>
+                    <option>Students</option>
+                </select>
+
+                <select>
+                    <option>Female</option>
+                </select>
+            </div>
+
+            <div class="search-group">
+                <input type="text" placeholder="Search">
+                <i class="fi fi-rr-search"></i>
+                <i class="fi fi-rr-sort"></i>
+            </div>
+        </div>
+
+        <!-- Table Header -->
+        <div class="table-header">
+            <span>RESIDENT NAME</span>
+            <span>ASSIGNED ROOM</span>
+            <span>ID NUMBER</span>
+            <span>CONTACT INFO</span>
+        </div>
+
+        <!-- Cards -->
+        <div class="card">
+            <div class="name">
+                <strong>Jilliane Mae A. Javellana</strong>
+                <small>javellanajilliane032797@gmail.com</small>
+            </div>
+            <div>23-17</div>
+            <div>2402015</div>
+            <div>0952632565</div>
+        </div>
+
+        <div class="card empty"></div>
+        <div class="card empty"></div>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

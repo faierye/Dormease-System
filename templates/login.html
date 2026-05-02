@@ -1,57 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Login Page</title>
-    <link rel="stylesheet" href="static/css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-rounded/css/uicons-solid-rounded.css">
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8">
+        <title>Login Page</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+    </head>
+    <body>
+        <!-- Header -->
+        <header>
+            <a href="/" class="logo-link">
+            <div class="logo" >
+                <img src="static/images/logo.png" alt="logo">
+                <div>
+                    <h2>Leyte Normal University</h2>
+                    <p>Integrity | Excellence | Service</p>
+                </div>
+            </div>
+            </a>
 
-<div class="container">
+        </header>
 
-    <!-- Login Form -->
-    <div class="form-box">
+    <div class="container">
 
-        <!-- Title -->
-        <div class="title">
-            <span class="icon">
-                <i class="fi fi-sr-circle-user"></i>
-            </span>
-            <h2>Admin Login</h2>
+        <!-- Login Form -->
+        <div class="form-box">
+
+            <!-- Title -->
+            <div class="title">
+                <span class="icon">
+                    <i class="fi fi-sr-circle-user"></i>
+                </span>
+                <h2>Admin Login</h2>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="error">{{ messages[0] }}</div>
+            {% endif %}
+            {% endwith %}
+
+            <form id="loginForm" method="POST" action="/login">
+
+                <label>Username</label>
+                <div class="input-group">
+                    <input type="text" name="username" placeholder="Enter your username" required>
+                </div>
+
+                <label>Password</label>
+                <div class="input-group password-group">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <i class="fi fi-rr-eye" id="togglePassword"></i>
+                </div>
+            
+                <div class="links">
+                    
+                    <!--<a href="#">Forgot your password?</a>-->
+                </div>
+
+                <button type="submit">Login</button>
+
+            </form>
         </div>
 
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="error">{{ messages[0] }}</div>
-        {% endif %}
-        {% endwith %}
-
-        <form id="loginForm" method="POST" action="/login">
-
-            <label>Username</label>
-            <div class="input-group">
-                <input type="text" name="username" placeholder="Enter your username" required>
-            </div>
-
-            <label>Password</label>
-            <div class="input-group">
-                <input type="password" name="password" placeholder="Enter your password" required>
-            </div>
-        
-            <div class="links">
-                <a href="/">Back</a>
-                <a href="#">Forgot your password?</a>
-            </div>
-
-            <button type="submit">Login</button>
-
-        </form>
     </div>
 
-</div>
-
-<script src="static/js/script.js"></script>
-</body>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    </body>
 </html>

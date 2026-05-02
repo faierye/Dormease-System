@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DormEase Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+
+<!-- YOUR EXACT SIDEBAR/TOPBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="logo">
+        <i class="fi fi-rr-menu-burger" id="menu-btn"></i>
+        <div class="logo-text">
+            <h2>DormEase</h2>
+            <span>Admin</span>
+        </div>
+    </div>
+    <ul class="menu">
+        <li class="active">
+            <a href="/dashboard">
+            <i class="fi fi-rr-apps"></i>
+            <span>Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="/residents">
+                <i class="fi fi-rr-user"></i>
+                <span>Residents</span>
+            </a>
+        </li>
+        <li>
+            <a href="/applications">
+                <i class="fi fi-rr-document"></i> 
+                <span>Applications</span>
+            </a>
+        </li>
+        <li>
+            <a href="/rooms">
+                <i class="fi fi-rr-bed"></i> 
+                <span>Room & Beds</span>
+            </a>
+        </li>
+        <li>
+            <a href="/payments">
+                <i class="fi fi-rr-money"></i> 
+                <span>Payments</span>
+            </a>
+        </li>
+        <li>
+            <a href="/settings">
+                <i class="fi fi-rr-settings"></i> 
+                <span>Settings</span>
+            </a>
+        </li>
+    </ul>
+    <div class="logout">
+        <a href="/" class="logout-link">
+            <i class="fi fi-rr-sign-out"></i> 
+            <span>Logout</span>
+        </a>
+    </div>
+</div>
+
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-left">
+            <h1>Dashboard</h1>
+        </div>
+        <div class="icons">
+            <i class="fi fi-rr-bell"></i>
+            <i class="fi fi-rr-envelope"></i>
+        </div>
+    </div>
+
+    <!-- YOUR EXACT CARDS -->
+    <div class="cards">
+        <div class="card">
+            <h3>Total Residents</h3>
+            <p id="residents">150</p>
+        </div>
+        <div class="card">
+            <h3>Pending Application</h3>
+            <p id="applications">12</p>
+        </div>
+        <div class="card">
+            <h3>Available Beds</h3>
+            <p id="beds">30</p>
+        </div>
+        <div class="card">
+            <h3>Pending Payments</h3>
+            <p id="payments">8</p>
+        </div>
+    </div>
+
+    <!-- YOUR EXACT CONTENT -->
+    <div class="content">
+        <div class="chart-box">
+            <h2>Occupancy Rate</h2>
+            <div class="chart-container">
+                <div id="myChart"></div>
+            </div>
+        </div>
+        <div class="side-box">
+            <div class="box">
+                <h2>Application Period</h2>
+                <form method="POST" action="/manage_period">
+                    <div class="form-group">
+                        <label>Period Name:</label>
+                        <input type="text" name = 'name' placeholder="e.g., 1st Semester 2025-2026" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date:</label>
+                        <input type="date" name = 'start_date' required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Date:</label>
+                        <input type="date" name = 'end_date' required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status:</label>
+                        <select name = 'status' required>
+                            <option value="" disabled selected hidden>Select Status</option>
+                            <option value="Open">Open</option>
+                            <option value="Closed">Closed</option>
+                            <option value="Upcoming">Upcoming</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-submit">Save Period</button>
+                </form>
+            </div>
+        </div>
+        <div class="recent">
+            <h2>Recent Activities</h2>
+            <ul id="activityList"></ul>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+            ['Category', 'Value'],
+            ['Students', 40],
+            ['Employees', 25]
+        ]);
+        var options = {
+            pieHole: 0.4,
+            legend: 'none',
+            width: '100%',
+            height: 350,
+            colors: ['#3b3b98', '#f1c40f', '#5dade2', '#f7dc6f']
+        };
+        var chart = new google.visualization.PieChart(document.getElementById('myChart'));
+        chart.draw(data, options);
+    }   
+    window.addEventListener("resize", drawChart);
+</script>
+</body>
+</html>
