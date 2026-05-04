@@ -1,0 +1,263 @@
+/* DETAIL PAGE STYLES */
+
+/* Back Link */
+.back-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: white;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.back-link:hover {
+    opacity: 0.8;
+}
+
+.back-link i {
+    font-size: 20px;
+}
+
+/* Detail Container */
+.detail-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+/* Detail Card */
+.detail-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.detail-card h2 {
+    font-size: 18px;
+    color: #3b3b98;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+/* Info Row */
+.info-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 16px;
+}
+
+.info-row label {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.info-row p {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.status-badge[data-status="pending"],
+.status-badge[data-status="Pending"] {
+    background: #fff3cd;
+    color: #ff8f00;
+}
+
+.status-badge[data-status="scheduled"],
+.status-badge[data-status="Scheduled"] {
+    background: #d4edda;
+    color: #2e7d32;
+}
+
+.status-badge[data-status="approved"],
+.status-badge[data-status="Approved"] {
+    background: #d4edda;
+    color: #2e7d32;
+}
+
+.status-badge[data-status="rejected"],
+.status-badge[data-status="Rejected"] {
+    background: #f8d7da;
+    color: #c62828;
+}
+
+/* Detail Left */
+.detail-left {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Detail Right */
+.detail-right {
+    display: flex;
+    flex-direction: column;
+}
+
+/* File Card */
+.file-card {
+    text-align: center;
+}
+
+.file-preview {
+    margin: 20px 0;
+    max-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+.file-preview img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+}
+
+.file-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px 20px;
+    color: #888;
+}
+
+.file-icon i {
+    font-size: 64px;
+    color: #ccc;
+}
+
+.file-icon p {
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.no-file {
+    color: #aaa;
+    padding: 30px 0;
+}
+
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #3f3dbf;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.download-btn:hover {
+    background: #3b3d9a;
+}
+
+/* Action Card */
+.action-card {
+    position: sticky;
+    top: 100px;
+}
+
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.approve-btn,
+.reject-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.approve-btn {
+    background: #2e7d32;
+    color: white;
+}
+
+.approve-btn:hover {
+    background: #1e5e2f;
+    transform: translateY(-2px);
+}
+
+.reject-btn {
+    background: #c62828;
+    color: white;
+}
+
+.reject-btn:hover {
+    background: #b71c1c;
+    transform: translateY(-2px);
+}
+
+.status-final {
+    text-align: center;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #666;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .detail-container {
+        grid-template-columns: 1fr;
+    }
+
+    .action-card {
+        position: relative;
+        top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .detail-card {
+        padding: 18px;
+    }
+
+    .info-row {
+        margin-bottom: 12px;
+    }
+
+    .button-group {
+        flex-direction: row;
+    }
+
+    .approve-btn,
+    .reject-btn {
+        flex: 1;
+    }
+}

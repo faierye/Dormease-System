@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DormEase Applications</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/applications.css') }}">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="logo">
+        <i class="fi fi-rr-menu-burger" id="menu-btn"></i>
+        <div class="logo-text">
+            <h2>DormEase</h2>
+            <span>Admin</span>
+        </div>
+    </div>
+
+    <ul class="menu">
+        <li><a href="/dashboard"><i class="fi fi-rr-apps"></i><span>Dashboard</span></a></li>
+        <li><a href="/residents"><i class="fi fi-rr-user"></i><span>Residents</span></a></li>
+        <li class="active"><a href="/applications"><i class="fi fi-rr-document"></i><span>Applications</span></a></li>
+        <li><a href="/rooms"><i class="fi fi-rr-bed"></i><span>Room & Beds</span></a></li>
+        <li><a href="/payments"><i class="fi fi-rr-money"></i><span>Payments</span></a></li>
+        <li><a href="/settings"><i class="fi fi-rr-settings"></i><span>Settings</span></a></li>
+    </ul>
+
+    <div class="logout">
+        <a href="/" class="logout-link">
+            <i class="fi fi-rr-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>Applications</h1>
+            </div>
+            <div class="top-icons">
+                <i class="fi fi-rr-bell"></i>
+                <i class="fi fi-rr-envelope"></i>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filters">
+
+            <!-- FILTER FORM -->
+            <form method="GET" action="/applications">
+                <div class="filter-group">
+                    <i class="fi fi-rr-filter"></i>
+
+                    <select name="applicant_type">
+                        <option value="all">All</option>
+                        <option value="Student">Students</option>
+                        <option value="Employee">Employee</option>
+                    </select>
+
+                    <select name="sex">
+                        <option value="all">All</option>
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                    </select>
+
+                    <button class="submit-btn" type="submit">Filter</button>
+                </div>
+            </form>
+
+            <div class="sched-btn">
+                <button class="submit-btn">
+                    <span>Interview Schedule</span>
+                    <i class="fi fi-rr-calendar-day"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- TABLE HEADER -->
+        <div class="table-header">
+            <span>APPLICANT ID</span>
+            <span>APPLICANT NAME</span>
+            <span>DATE APPLIED</span>
+            <span>STATUS</span>
+            <span>ACTION</span>
+        </div>
+
+        <!-- CARDS -->
+        {% if applications %}
+            {% for application in applications %}
+                <div class="card">
+
+                    <div>{{ application.applicant_number or 'N/A' }}</div>
+
+                    <div class="name">
+                        <strong>{{ application.first_name }}</strong>
+                        <small>{{ application.email }}</small>
+                    </div>
+
+                    <div>
+                        {{ application.created_at.strftime('%Y-%m-%d') if application.created_at else 'N/A' }}
+                    </div>
+
+                    <div class="status {{ application.status|default('Pending') }}">
+                        {{ application.status|default('Pending') }}
+                    </div>
+
+                    <div>
+                        <i class="fi {% if application.status == 'For_Interview' %}fi-rr-eye{% else %}fi-rr-clock{% endif %} action-btn"
+                            data-id="{{ application.application_id }}"
+                            data-applicant-number="{{ application.applicant_number }}"
+                            data-name="{{ application.first_name }}"
+                            data-email="{{ application.email }}"
+                            data-address="{{ application.current_address or 'N/A' }}"
+                            data-phone="{{ application.contact_number }}"
+                            
+                            data-date-applied="{{ application.created_at.strftime('%B %d, %Y') if application.created_at else '---' }}"
+                            data-role="{{ 'STUDENT' if application.applicant_type == 'Student' else 'Employee' }}"
+                            data-interview-status="{{ application.status|default('Pending') }}">
+                        </i>
+                    </div>
+
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="card empty">
+                <p>No applicants found.</p>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- MODAL -->
+<div id="viewModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+
+        <h2>Schedule an Interview</h2>
+
+        <!-- TOP CARD -->
+        <div class="modal-card top-card">
+            <div class="left">
+                <h3 id="m-name">NAME HERE</h3>
+                <p id="m-address">Address here</p>
+                <p id="m-phone">Phone here</p>
+                <p id="m-email">Email here</p>
+            </div>
+
+            <div class="right">
+                <p id="m-role">Role</p>
+                <p id="m-id">000000</p>
+                <p id="m-year">Year</p>
+                <p id="m-course">Course</p>
+            </div>
+        </div>
+
+        <!-- BOTTOM CARD -->
+        <div class="modal-card bottom-card">
+            <div class="left">
+                <p class="label">Date Applied</p>
+                <p id="m-date-applied" class="muted">---</p>
+            </div>
+
+            <div class="right">
+                <p class="label">Interview Schedule</p>
+                <input type="date" id="interview-date" class="input-field">
+                <input type="time" id="interview-time" class="input-field">
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="actions">
+            <button class="cancel-btn">Cancel</button>
+            <button class="save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- JS -->
+<script>
+const modal = document.getElementById("viewModal");
+const closeBtn = document.querySelector(".close-btn");
+const cancelBtn = document.querySelector(".cancel-btn");
+const saveBtn = document.querySelector(".save-btn");
+
+let currentApplicationId = null;
+
+document.querySelectorAll(".action-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const appId = btn.dataset.id;
+        
+        // ALWAYS check current status from server, not stale dataset
+        fetch(`/get_applicant_info/${appId}`)
+            .then(response => response.json())
+            .then(data => {
+                const currentStatus = data.application_status || data.status || 'Pending';
+                
+                if (currentStatus === 'For_Interview') {
+                    // Eye icon: Redirect to detail page
+                    window.location.href = "/application/" + appId;
+                } else {
+                    // Clock icon: Open scheduling modal
+                    currentApplicationId = appId;
+                    
+                    document.getElementById("m-name").innerText = btn.dataset.name;
+                    document.getElementById("m-email").innerText = btn.dataset.email;
+                    document.getElementById("m-address").innerText = btn.dataset.address;
+                    document.getElementById("m-phone").innerText = btn.dataset.phone;
+                    document.getElementById("m-role").innerText = btn.dataset.role;
+                    document.getElementById("m-date-applied").innerText = btn.dataset.dateApplied || '---';
+                    
+                    // Fetch additional details
+                    fetch(`/get_applicant_info/${appId}`)
+                        .then(response => response.json())
+                        .then(info => {
+                            if (info.success) {
+                                document.getElementById("m-id").innerText = info.student_number || info.employee_number || 'N/A';
+                                document.getElementById("m-year").innerText = info.year_level || 'N/A';
+                                document.getElementById("m-course").innerText = info.program || 'N/A';
+                            }
+                        });
+                    
+                    document.getElementById("interview-date").value = "";
+                    document.getElementById("interview-time").value = "";
+                    modal.style.display = "block";
+                }
+            });
+    });
+});
+
+// Save Interview Schedule
+saveBtn.addEventListener("click", () => {
+    const interviewDate = document.getElementById("interview-date").value;
+    const interviewTime = document.getElementById("interview-time").value;
+    
+    if (!interviewDate || !interviewTime) {
+        alert("Please select both date and time");
+        return;
+    }
+    
+    fetch('/schedule_interview', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            application_id: currentApplicationId,
+            interview_date: interviewDate,
+            interview_time: interviewTime
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("Interview scheduled successfully!");
+            modal.style.display = "none";
+            location.href = '/applications?' + new Date().getTime();  // Bypasses cache 
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+closeBtn.onclick = () => modal.style.display = "none";
+cancelBtn.onclick = () => modal.style.display = "none";
+window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
+</script>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

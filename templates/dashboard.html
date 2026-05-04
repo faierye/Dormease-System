@@ -58,7 +58,7 @@
     </ul>
     <div class="logout">
         <a href="/" class="logout-link">
-            <i class="fi fi-rr-sign-out"></i> 
+            <i class="fi fi-rr-sign-out-alt"></i>
             <span>Logout</span>
         </a>
     </div>
@@ -79,19 +79,19 @@
     <div class="cards">
         <div class="card">
             <h3>Total Residents</h3>
-            <p id="residents">150</p>
+            <p id="residents">{{ total_residents }}</p>
         </div>
         <div class="card">
             <h3>Pending Application</h3>
-            <p id="applications">12</p>
+            <p id="applications">{{ pending_applications }}</p>
         </div>
         <div class="card">
             <h3>Available Beds</h3>
-            <p id="beds">30</p>
+            <p id="beds">{{ available_beds }}</p>
         </div>
         <div class="card">
             <h3>Pending Payments</h3>
-            <p id="payments">8</p>
+            <p id="payments">{{ pending_payments }}</p>
         </div>
     </div>
 
@@ -106,29 +106,71 @@
         <div class="side-box">
             <div class="box">
                 <h2>Application Period</h2>
+
                 <form method="POST" action="/manage_period">
+
+                    <!-- 🔥 Hidden ID for update -->
+                    <input type="hidden" name="id" value="{{ period[0] if period else '' }}">
+
+                    <!-- PERIOD NAME -->
                     <div class="form-group">
                         <label>Period Name:</label>
-                        <input type="text" name = 'name' placeholder="e.g., 1st Semester 2025-2026" required>
+                        <input 
+                            type="text" 
+                            name="name"
+                            value="{{ period[1] if period else '' }}"
+                            placeholder="e.g., 1st Semester 2025-2026" 
+                            required>
                     </div>
+
+                    <!-- START DATE -->
                     <div class="form-group">
                         <label>Start Date:</label>
-                        <input type="date" name = 'start_date' required>
+                        <input 
+                            type="date" 
+                            name="start_date"
+                            value="{{ period[2] if period else '' }}" 
+                            required>
                     </div>
+
+                    <!-- END DATE -->
                     <div class="form-group">
                         <label>End Date:</label>
-                        <input type="date" name = 'end_date' required>
+                        <input 
+                            type="date" 
+                            name="end_date"
+                            value="{{ period[3] if period else '' }}" 
+                            required>
                     </div>
+
+                    <!-- STATUS -->
                     <div class="form-group">
                         <label>Status:</label>
-                        <select name = 'status' required>
-                            <option value="" disabled selected hidden>Select Status</option>
-                            <option value="Open">Open</option>
-                            <option value="Closed">Closed</option>
-                            <option value="Upcoming">Upcoming</option>
+                        <select name="status" required>
+                            <option value="" disabled {% if not period %}selected{% endif %}>Select Status</option>
+
+                            <option value="Open" 
+                                {% if period and period[4] == 'Open' %}selected{% endif %}>
+                                Open
+                            </option>
+
+                            <option value="Closed" 
+                                {% if period and period[4] == 'Closed' %}selected{% endif %}>
+                                Closed
+                            </option>
+
+                            <option value="Upcoming" 
+                                {% if period and period[4] == 'Upcoming' %}selected{% endif %}>
+                                Upcoming
+                            </option>
                         </select>
                     </div>
-                    <button type="submit" class="btn-submit">Save Period</button>
+
+                    <!-- BUTTON -->
+                    <button type="submit" class="btn-submit">
+                        {% if period %}Update Period{% else %}Save Period{% endif %}
+                    </button>
+
                 </form>
             </div>
         </div>

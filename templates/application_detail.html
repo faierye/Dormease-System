@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Application Detail - DormEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/applications.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="logo">
+        <i class="fi fi-rr-menu-burger" id="menu-btn"></i>
+        <div class="logo-text">
+            <h2>DormEase</h2>
+            <span>Admin</span>
+        </div>
+    </div>
+
+    <ul class="menu">
+        <li><a href="/dashboard"><i class="fi fi-rr-apps"></i><span>Dashboard</span></a></li>
+        <li><a href="/residents"><i class="fi fi-rr-user"></i><span>Residents</span></a></li>
+        <li class="active"><a href="/applications"><i class="fi fi-rr-document"></i><span>Applications</span></a></li>
+        <li><a href="/rooms"><i class="fi fi-rr-bed"></i><span>Room & Beds</span></a></li>
+        <li><a href="/payments"><i class="fi fi-rr-money"></i><span>Payments</span></a></li>
+        <li><a href="/settings"><i class="fi fi-rr-settings"></i><span>Settings</span></a></li>
+    </ul>
+
+    <div class="logout">
+        <a href="/" class="logout-link">
+            <i class="fi fi-rr-sign-out"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <a href="/applications" class="back-link">
+                    <i class="fi fi-rr-arrow-left"></i>
+                    <h1>Application Details</h1>
+                </a>
+            </div>
+            <div class="top-icons">
+                <i class="fi fi-rr-bell"></i>
+                <i class="fi fi-rr-envelope"></i>
+            </div>
+        </div>
+
+        <!-- DETAIL CONTAINER -->
+        <div class="detail-container">
+
+            <!-- LEFT SECTION: Info & File -->
+            <div class="detail-left">
+                
+                <!-- APPLICANT INFO CARD -->
+                <div class="detail-card">
+                    <h2>Applicant Information</h2>
+                    
+                    <div class="info-row">
+                        <label>Full Name</label>
+                        <p>{{ application.first_name }} {{ application.middle_name or '' }} {{ application.last_name }} {{ application.extension_name or '' }}</p>
+                    </div>
+
+                    <div class="info-row">
+                        <label>Applicant Number</label>
+                        <p>{{ application.applicant_number }}</p>
+                    </div>
+
+                    <div class="info-row">
+                        <label>Email</label>
+                        <p>{{ application.email }}</p>
+                    </div>
+
+                    <div class="info-row">
+                        <label>Phone</label>
+                        <p>{{ application.contact_number }}</p>
+                    </div>
+
+                    <div class="info-row">
+                        <label>Age</label>
+                        <p>{{ application.age }}</p>
+                    </div>
+
+                    <div class="info-row">
+                        <label>Sex</label>
+                        <p>{{ application.sex }}</p>
+                    </div>
+
+                    <div class="info-row">
+                        <label>Permanent Address</label>
+                        <p>{{ application.permanent_address }}</p>
+                    </div>
+
+                    <div class="info-row">
+                        <label>Current Address</label>
+                        <p>{{ application.current_address }}</p>
+                    </div>
+                </div>
+
+                <!-- ROLE-SPECIFIC INFO -->
+                <div class="detail-card">
+                    <h2>
+                        {% if application.applicant_type == 'student' or application.applicant_type == 'Student' %}
+                            Student Information
+                        {% else %}
+                            Employee Information
+                        {% endif %}
+                    </h2>
+                    
+                    {% if application.applicant_type == 'student' or application.applicant_type == 'Student' %}
+                        <div class="info-row">
+                            <label>Student Number</label>
+                            <p>{{ info.student_number if info else 'N/A' }}</p>
+                        </div>
+
+                        <div class="info-row">
+                            <label>Program</label>
+                            <p>{{ info.program if info else 'N/A' }}</p>
+                        </div>
+
+                        <div class="info-row">
+                            <label>Year Level</label>
+                            <p>{{ info.year_level if info else 'N/A' }}</p>
+                        </div>
+                    {% else %}
+                        <div class="info-row">
+                            <label>Employee Number</label>
+                            <p>{{ info.employee_number if info else 'N/A' }}</p>
+                        </div>
+
+                        <div class="info-row">
+                            <label>Department</label>
+                            <p>{{ info.department if info else 'N/A' }}</p>
+                        </div>
+
+                        <div class="info-row">
+                            <label>Position</label>
+                            <p>{{ info.position if info else 'N/A' }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- APPLICATION STATUS -->
+                <div class="detail-card">
+                    <h2>Application Status</h2>
+                    
+                    <div class="info-row">
+                        <label>Date Applied</label>
+                        <p>{{ application.created_at.strftime('%B %d, %Y') if application.created_at else 'N/A' }}</p>
+                    </div>
+
+                    <div class="info-row">
+                        <label>Interview Status</label>
+                        {% if interview_data %}
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <p class="status-badge" data-status="{{ interview_data.status|default('scheduled') }}">
+                                    {{ interview_data.status|default('Scheduled')|replace('_', ' ')|title }}
+                                </p>
+                                {% if interview_data.status != 'completed' and interview_data.status != 'no_show' %}
+                                    <button class="interview-action-btn" data-app-id="{{ application.application_id }}" data-status="completed" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Completed</button>
+                                    <button class="interview-action-btn" data-app-id="{{ application.application_id }}" data-status="no_show" style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">No Show</button>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <p>No interview scheduled</p>
+                        {% endif %}
+                    </div>
+
+                    {% if interview_data and interview_data.interview_date and interview_data.interview_time %}
+                    <div class="info-row">
+                        <label>Interview Schedule</label>
+                        <p>
+                            <strong>{{ interview_data.interview_date.strftime('%B %d, %Y') if interview_data.interview_date else 'N/A' }}</strong> 
+                            at 
+                            <strong>{{ interview_data.interview_time }}</strong>
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <div class="info-row">
+                        <label>Application Status</label>
+                        <p class="status-badge" data-status="{{ application.application_status|default('pending') }}">
+                            {{ application.application_status|default('Pending')|replace('_', ' ')|title }}
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT SECTION: File/Picture & Action Buttons -->
+            <div class="detail-right">
+
+                <!-- FILE DISPLAY -->
+                <div class="detail-card file-card">
+                    <h2>Uploaded Document</h2>
+                    {% if file_data and file_data.file_name %}
+                        <div class="file-preview">
+                            {% if file_data.file_name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) %}
+                                <img src="{{ url_for('static', filename='uploads/' + file_data.file_name) }}" alt="Applicant Document">
+                            {% else %}
+                                <div class="file-icon">
+                                    <i class="fi fi-rr-file"></i>
+                                    <p>{{ file_data.file_name }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('static', filename='uploads/' + file_data.file_name) }}" class="download-btn" download>
+                            <i class="fi fi-rr-download"></i> Download
+                        </a>
+                    {% else %}
+                        <p class="no-file">No document uploaded</p>
+                    {% endif %}
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="detail-card action-card">
+                    <h2>Action</h2>
+                    <div class="button-group">
+                        {% if application.application_status != 'approved' and application.application_status != 'rejected' %}
+                            <button class="app-action-btn" data-app-id="{{ application.application_id }}" data-action="approve" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <i class="fi fi-rr-check"></i>
+                                Approve
+                            </button>
+                            <button class="app-action-btn" data-app-id="{{ application.application_id }}" data-action="reject" style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <i class="fi fi-rr-cross"></i>
+                                Reject
+                            </button>
+                        {% else %}
+                            <p class="status-final">
+                                Application {{ application.application_status|title }}
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- JS -->
+<script>
+// Interview Status Buttons
+document.querySelectorAll('.interview-action-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const appId = this.getAttribute('data-app-id');
+        const status = this.getAttribute('data-status');
+        if (confirm(`Are you sure you want to mark this interview as ${status}?`)) {
+            updateInterviewStatus(appId, status);
+        }
+    });
+});
+
+// Application Action Buttons  
+document.querySelectorAll('.app-action-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const appId = this.getAttribute('data-app-id');
+        const action = this.getAttribute('data-action');
+        if (action === 'approve') {
+            approveApplication(appId);
+        } else if (action === 'reject') {
+            rejectApplication(appId);
+        }
+    });
+});
+
+function updateInterviewStatus(appId, status) {
+    fetch('/update_interview_status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            application_id: appId,
+            interview_status: status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Interview marked as ${status}!`);
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function approveApplication(appId) {
+    if (confirm("Are you sure you want to approve this application?")) {
+        updateApplicationStatus(appId, 'approved');
+    }
+}
+
+function rejectApplication(appId) {
+    if (confirm("Are you sure you want to reject this application?")) {
+        updateApplicationStatus(appId, 'rejected');
+    }
+}
+
+function updateApplicationStatus(appId, status) {
+    fetch('/update_application_status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            application_id: appId,
+            status: status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Application ${status} successfully!`);
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Sidebar Toggle
+document.getElementById('menu-btn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('hide');
+});
+</script>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

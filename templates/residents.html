@@ -57,7 +57,7 @@
     </ul>
     <div class="logout">
         <a href="/" class="logout-link">
-            <i class="fi fi-rr-sign-out"></i> 
+            <i class="fi fi-rr-sign-out-alt"></i>
             <span>Logout</span>
         </a>
     </div>
@@ -80,17 +80,25 @@
 
         <!-- Filters -->
         <div class="filters">
-            <div class="filter-group">
-                <i class="fi fi-rr-filter"></i>
+            <form method="GET" action="/residents">
+                <div class="filter-group">
+                    <i class="fi fi-rr-filter"></i>
 
-                <select>
-                    <option>Students</option>
-                </select>
+                    <select name="applicant_type">
+                        <option value="all">All</option>
+                        <option value="Student">Students</option>
+                        <option value="Employee">Employee</option>
+                    </select>
 
-                <select>
-                    <option>Female</option>
-                </select>
-            </div>
+                    <select name="sex">
+                        <option value="all">All</option>
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                    </select>
+
+                    <button class="submit-btn" type="submit">Filter</button>
+                </div>
+            </form>
 
             <div class="search-group">
                 <input type="text" placeholder="Search">
@@ -105,21 +113,27 @@
             <span>ASSIGNED ROOM</span>
             <span>ID NUMBER</span>
             <span>CONTACT INFO</span>
+            <span>ACTION</span>
         </div>
 
         <!-- Cards -->
-        <div class="card">
-            <div class="name">
-                <strong>Jilliane Mae A. Javellana</strong>
-                <small>javellanajilliane032797@gmail.com</small>
+        {% if residents %}
+            {% for resident in residents %}
+                <div class="card">
+                    <div class="name">
+                        <strong>{{ resident.full_name }}</strong>
+                        <small>{{ resident.email }}</small>
+                    </div>
+                    <div>{{ resident.assigned_room or 'N/A' }}</div>
+                    <div>{{ resident.id_number or 'N/A' }}</div>
+                    <div>{{ resident.contact_number or 'N/A' }}</div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="card empty">
+                <p>No residents found.</p>
             </div>
-            <div>23-17</div>
-            <div>2402015</div>
-            <div>0952632565</div>
-        </div>
-
-        <div class="card empty"></div>
-        <div class="card empty"></div>
+        {% endif %}
 
     </div>
 

@@ -251,42 +251,300 @@ def login():
 #Dashboard
 @app.route('/dashboard')
 def dashboard():
-    return render_template('dashboard.html')
+    cur = mysql.connection.cursor()
+
+    # your existing stats...
+    cur.execute("SELECT COUNT(*) FROM residents_tb")
+    total_residents = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM applications_tb WHERE status='Pending'")
+    pending_applications = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM beds_tb WHERE status='Available'")
+    available_beds = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM payment_tb WHERE status='Pending'")
+    pending_payments = cur.fetchone()[0]
+
+    # 🔥 GET CURRENT PERIOD (latest one)
+    cur.execute("SELECT period_id, name, start_date, end_date, status FROM application_period ORDER BY period_id DESC LIMIT 1")
+    period = cur.fetchone()
+
+    cur.close()
+
+    return render_template(
+        'dashboard.html',
+        total_residents=total_residents,
+        pending_applications=pending_applications,
+        available_beds=available_beds,
+        pending_payments=pending_payments,
+        period=period
+    )
 
 #Application Period Management
 @app.route('/manage_period', methods=['POST'])
 def manage_period():
-    if request.method == 'POST':
-        name = request.form['name']
-        start_date = request.form['start_date']
-        end_date = request.form['end_date']
-        status = request.form['status']
+    id = request.form.get('id')
+    name = request.form['name']
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    status = request.form['status']
 
-        cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor()
+
+    if id:  # 🔥 UPDATE
+        cur.execute("""
+            UPDATE application_period
+            SET name=%s, start_date=%s, end_date=%s, status=%s
+            WHERE id=%s
+        """, (name, start_date, end_date, status, id))
+    else:  # 🔥 INSERT
         cur.execute("""
             INSERT INTO application_period (name, start_date, end_date, status)
             VALUES (%s, %s, %s, %s)
         """, (name, start_date, end_date, status))
-        mysql.connection.commit()
-        cur.close()
 
-        return redirect(url_for('dashboard'))
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect('/dashboard')
 
 #Residents
 @app.route('/residents')
 def residents():
+
+    applicant_type = request.args.get('applicant_type', 'all')
+    sex = request.args.get('sex', 'all')
+
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("""
-        SELECT a.applicant_number, a.first_name, a.last_name, s.student_number, s.program, s.year_level
+
+    query = """
+        SELECT a.applicant_number,
+               CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name, a.extension_name) AS full_name,
+               a.contact_number,
+               a.email,
+               a.applicant_type,
+               COALESCE(s.student_number, e.employee_number) AS id_number,
+               COALESCE(s.program, e.department, 'N/A') AS assigned_room,
+               a.sex
         FROM applications_tb a
-        JOIN student_info s ON a.application_id = s.application_id
-        WHERE a.applicant_type = 'student'
-    """)
-    students = cur.fetchall()
+        LEFT JOIN student_info s ON a.application_id = s.application_id
+        LEFT JOIN employee_info e ON a.application_id = e.application_id
+        WHERE a.status = 'Approved'
+    """
+
+    params = []
+
+    if applicant_type != 'all':
+        query += " AND a.applicant_type = %s"
+        params.append(applicant_type)
+
+    if sex != 'all':
+        query += " AND a.sex = %s"
+        params.append(sex)
+
+    cur.execute(query, params)
+    data = cur.fetchall()
     cur.close()
 
-    return render_template('residents.html', students=students)
+    return render_template('residents.html', residents=data, applicant_type=applicant_type, sex=sex)
 
+#Application Details
+@app.route('/applications')
+def applications():
+    applicant_type = request.args.get('applicant_type', 'all')
+    sex = request.args.get('sex', 'all')
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    query = "SELECT * FROM applications_tb WHERE 1=1"
+    params = []
+
+    if applicant_type != 'all':
+        query += " AND applicant_type = %s"
+        params.append(applicant_type)
+
+    if sex != 'all':
+        query += " AND sex = %s"
+        params.append(sex)
+
+    cur.execute(query, params)
+    data = cur.fetchall()
+    cur.close()
+
+    return render_template('applications.html', applications=data)
+
+# Applicant Detail Page
+@app.route('/application/<int:app_id>')
+def application_detail(app_id):
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Get application details
+    cur.execute("""
+        SELECT * FROM applications_tb 
+        WHERE application_id = %s
+    """, (app_id,))
+
+    application = cur.fetchone()
+    
+    if not application:
+        cur.close()
+        return redirect(url_for('applications'))
+    
+    # Get student or employee info
+    if application['applicant_type'].lower() == 'Student':
+        cur.execute("""
+            SELECT * FROM student_info 
+            WHERE application_id = %s
+        """, (app_id,))
+
+        info = cur.fetchone()
+
+    else:
+        cur.execute("""
+            SELECT * FROM employee_info 
+            WHERE application_id = %s
+        """, (app_id,))
+
+        info = cur.fetchone()
+    
+    # Get uploaded file
+    cur.execute("""
+        SELECT file_name FROM requirements_tb 
+        WHERE application_id = %s 
+        LIMIT 1
+    """, (app_id,))
+
+    file_data = cur.fetchone()
+    
+    # Get interview schedule data
+    cur.execute("""
+        SELECT status, interview_date, interview_time FROM interview_sched 
+        WHERE application_id = %s 
+    """, (app_id,))
+
+    interview_data = cur.fetchone()
+    
+    cur.close()
+    
+    return render_template('application_detail.html', 
+                           application=application, 
+                           info=info,
+                           file_data=file_data,
+                           interview_data=interview_data)
+
+# Get Applicant Info (Student/Employee Details) MODAL
+@app.route('/get_applicant_info/<int:app_id>')
+def get_applicant_info(app_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Get application details FIRST (including status)
+    cur.execute("""
+        SELECT applicant_type, status FROM applications_tb 
+        WHERE application_id = %s
+    """, (app_id,))
+    application = cur.fetchone()
+    
+    if not application:
+        cur.close()
+        return {'success': False, 'message': 'Application not found'}
+    
+    # Get student or employee info
+    if application['applicant_type'].lower() == 'student':
+        cur.execute("""
+            SELECT student_number, program, year_level 
+            FROM student_info 
+            WHERE application_id = %s
+        """, (app_id,))
+    else:
+        cur.execute("""
+            SELECT employee_number, department, position 
+            FROM employee_info 
+            WHERE application_id = %s
+        """, (app_id,))
+    
+    info = cur.fetchone()
+    cur.close()
+    
+    if info:
+        info['success'] = True
+        info['status'] = application['status']  # ADD THIS LINE
+        return info
+    else:
+        return {'success': True, 'status': application['status']}
+
+#SCHEDULE INTERVIEW
+@app.route('/schedule_interview', methods=['POST'])
+def schedule_interview():
+    data = request.get_json()
+    app_id = data.get('application_id')
+    interview_date = data.get('interview_date')
+    interview_time = data.get('interview_time')
+    
+    cur = mysql.connection.cursor()
+    
+    # MAGIC: Updates OR inserts - NO DUPLICATES EVER!
+    cur.execute("""
+        INSERT INTO interview_sched (application_id, interview_date, interview_time, status)
+        VALUES (%s, %s, %s, 'scheduled')
+        ON DUPLICATE KEY UPDATE 
+            interview_date = VALUES(interview_date),
+            interview_time = VALUES(interview_time),
+            status = 'scheduled',
+            updated_at = CURRENT_TIMESTAMP
+    """, (app_id, interview_date, interview_time))
+    
+    rows_affected = cur.rowcount  # 1=insert, 2=update
+    print(f"Interview updated: {rows_affected} rows affected")
+    
+    # Update application status
+    cur.execute("UPDATE applications_tb SET status = 'For_Interview' WHERE application_id = %s", (app_id,))
+    
+    mysql.connection.commit()
+    cur.close()
+    
+    return {'success': True, 'message' :f'Interview {"created" if rows_affected == 1 else "updated"}!'}
+
+# Update Interview Status
+@app.route('/update_interview_status', methods=['POST'])
+def update_interview_status():
+    data = request.get_json()
+    app_id = data.get('application_id')
+    interview_status = data.get('interview_status')  # 'scheduled', 'completed', or 'no show'
+    
+    cur = mysql.connection.cursor()
+    
+    cur.execute("""
+        UPDATE interview_sched 
+        SET status = %s
+        WHERE application_id = %s
+    """, (interview_status, app_id))
+    
+    mysql.connection.commit()
+    cur.close()
+    
+    return {'success': True, 'message': f'Interview status updated to {interview_status}'}
+
+# Update Application Status
+@app.route('/update_application_status', methods=['POST'])
+def update_application_status():
+    data = request.get_json()
+    app_id = data.get('application_id')
+    status = data.get('status')  # 'approved' or 'rejected'
+    
+    cur = mysql.connection.cursor()
+    
+    cur.execute("""
+        UPDATE applications_tb 
+        SET application_status = %s
+        WHERE application_id = %s
+    """, (status, app_id))
+    
+    mysql.connection.commit()
+    cur.close()
+    
+    return {'success': True, 'message': f'Application {status} successfully'}
 
 if __name__ == '__main__':
     app.run( debug=True) 
