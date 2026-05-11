@@ -31,16 +31,31 @@ function goLogin() {
 function toggleFields() {
     const type = document.getElementById("type").value;
 
-    const student = document.getElementById("studentBox");
-    const employee = document.getElementById("employeeBox");
+    const studentBox = document.getElementById("studentBox");
+    const employeeBox = document.getElementById("employeeBox");
 
-    student.style.display = "none";
-    employee.style.display = "none";
+    const studentInputs = studentBox.querySelectorAll("input, select");
+    const employeeInputs = employeeBox.querySelectorAll("input, select");
 
     if (type === "student") {
-        student.style.display = "flex";
+        studentBox.style.display = "block";
+        employeeBox.style.display = "none";
+
+        // enable student required
+        studentInputs.forEach(input => input.required = true);
+
+        // disable employee required
+        employeeInputs.forEach(input => input.required = false);
+
     } else if (type === "employee") {
-        employee.style.display = "flex";
+        studentBox.style.display = "none";
+        employeeBox.style.display = "block";
+
+        // disable student required
+        studentInputs.forEach(input => input.required = false);
+
+        // enable employee required
+        employeeInputs.forEach(input => input.required = true);
     }
 }
 

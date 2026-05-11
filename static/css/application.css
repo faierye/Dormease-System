@@ -69,6 +69,20 @@ input, select {
     margin-bottom: 15px;
 }
 
+.grid-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.grid-number {
+    display: grid;
+    grid-template-columns: 0.5fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
 .grid-2 {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

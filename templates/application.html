@@ -59,8 +59,10 @@
 
             <!-- STUDENT -->
             <div class="box" id="studentBox">
-                <input type="text" name="student_number" placeholder="Student Number">
-                <div class="grid-2">
+                <div class="grid-number">
+                    <input type="text" name="student_number" placeholder="Student Number" required>
+                </div>
+                <div class="grid-1">
                     <select name="program" required>
                         <option value="" disabled selected hidden>Program</option>
 
@@ -91,7 +93,8 @@
                         </optgroup>
 
                     </select>
-
+                </div>
+                <div class="grid-1">
                     <select name="year_level" required>
                         <option value="" disabled selected hidden>Year Level</option>
                         <option value="1st Year">1st Year</option>
@@ -108,10 +111,12 @@
 
             <!-- EMPLOYEE -->
             <div class="box" id="employeeBox">
-                <input type="text" name="employee_number" placeholder="Employee Number">
+                <div class="grid-number">
+                    <input type="text" name="employee_number" placeholder="Employee Number" required>
+                </div>
                 <div class="grid-2">
-                    <input type="text" name="department" placeholder="Department">
-                    <input type="text" name="position" placeholder="Position">
+                    <input type="text" name="department" placeholder="Department" required>
+                    <input type="text" name="position" placeholder="Position" required>
                 </div>
 
                 <label>Certificate of Employment</label>

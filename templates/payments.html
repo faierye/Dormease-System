@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DormEase Payments</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/payments.css') }}">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+
+    <div class="logo">
+        <i class="fi fi-rr-menu-burger" id="menu-btn"></i>
+
+        <div class="logo-text">
+            <h2>DormEase</h2>
+            <span>Admin</span>
+        </div>
+    </div>
+
+    <ul class="menu">
+
+        <li>
+            <a href="/dashboard">
+                <i class="fi fi-rr-apps"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/residents">
+                <i class="fi fi-rr-user"></i>
+                <span>Residents</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/applications">
+                <i class="fi fi-rr-document"></i>
+                <span>Applications</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/rooms_bed">
+                <i class="fi fi-rr-bed"></i>
+                <span>Rooms & Beds</span>
+            </a>
+        </li>
+
+        <li class="active">
+            <a href="/payments">
+                <i class="fi fi-rr-money"></i>
+                <span>Payments</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/settings">
+                <i class="fi fi-rr-settings"></i>
+                <span>Settings</span>
+            </a>
+        </li>
+
+    </ul>
+
+    <div class="logout">
+        <a href="/" class="logout-link">
+            <i class="fi fi-rr-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+
+            <div class="topbar-left">
+                <h1>Payments</h1>
+            </div>
+
+            <div class="top-icons">
+                <i class="fi fi-rr-bell"></i>
+                <i class="fi fi-rr-envelope"></i>
+            </div>
+
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filters">
+
+            <form method="GET" action="/rooms_bed">
+
+                <div class="filter-group">
+
+                    <i class="fi fi-rr-filter"></i>
+
+                    <select name="applicant_type">
+                        <option value="all">All</option>
+                        <option value="Student">Students</option>
+                        <option value="Employee">Employee</option>
+                    </select>
+
+                    <select name="status">
+                        <option value="all">All</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                    </select>
+
+                    <button class="submit-btn" type="submit">
+                        Filter
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+        <!-- TABLE HEADER -->
+        <div class="table-header">
+            <span>APPLICANT NAME</span>
+            <span>ROOM NUMBER</span>
+            <span>STATUS</span>
+            <span>ACTION</span>
+        </div>
+
+        <!-- CARDS -->
+        {% if applications %}
+            {% for application in applications %}
+                <div class="card">
+
+                    <div class="name">
+                        <strong>{{ application.first_name }}</strong>
+                        <small>{{ application.email }}</small>
+                    </div>
+
+                    <div>
+                        {{ application.created_at.strftime('%Y-%m-%d') if application.created_at else 'N/A' }}
+                    </div>
+
+                    <div class="status {{ application.status|default('Pending') }}">
+                        {{ application.status|default('Pending') }}
+                    </div>
+
+                    <div>
+                        <i class="fi {% if application.status == 'For_Interview' %}fi-rr-eye{% else %}fi-rr-clock{% endif %} action-btn"
+                            data-id="{{ application.application_id }}"
+                            data-applicant-number="{{ application.applicant_number }}"
+                            data-name="{{ application.first_name }}"
+                            data-email="{{ application.email }}"
+                            data-address="{{ application.current_address or 'N/A' }}"
+                            data-phone="{{ application.contact_number }}"
+                            
+                            data-date-applied="{{ application.created_at.strftime('%B %d, %Y') if application.created_at else '---' }}"
+                            data-role="{{ 'Student' if application.applicant_type == 'Student' else 'Employee' }}"
+                            data-interview-status="{{ application.status|default('Pending') }}">
+                        </i>
+                    </div>
+
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="card empty">
+                <p>No residents found.</p>
+            </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+<!-- SCRIPT -->
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

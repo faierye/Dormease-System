@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DormEase Rooms & Beds</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rooms.css') }}">
+
+    <link rel="stylesheet"
+    href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+
+    <div class="logo">
+        <i class="fi fi-rr-menu-burger" id="menu-btn"></i>
+
+        <div class="logo-text">
+            <h2>DormEase</h2>
+            <span>Admin</span>
+        </div>
+    </div>
+
+    <ul class="menu">
+
+        <li>
+            <a href="/dashboard">
+                <i class="fi fi-rr-apps"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/residents">
+                <i class="fi fi-rr-user"></i>
+                <span>Residents</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/applications">
+                <i class="fi fi-rr-document"></i>
+                <span>Applications</span>
+            </a>
+        </li>
+
+        <li class="active">
+            <a href="/rooms_bed">
+                <i class="fi fi-rr-bed"></i>
+                <span>Rooms & Beds</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/payments">
+                <i class="fi fi-rr-money"></i>
+                <span>Payments</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="/settings">
+                <i class="fi fi-rr-settings"></i>
+                <span>Settings</span>
+            </a>
+        </li>
+
+    </ul>
+
+    <div class="logout">
+        <a href="/" class="logout-link">
+            <i class="fi fi-rr-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+
+            <div class="topbar-left">
+                <h1>Rooms & Beds</h1>
+            </div>
+
+            <div class="top-icons">
+                <i class="fi fi-rr-bell"></i>
+                <i class="fi fi-rr-envelope"></i>
+            </div>
+
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filters">
+
+            <form method="GET" action="/rooms_bed">
+
+                <div class="filter-group">
+
+                    <i class="fi fi-rr-filter"></i>
+
+                    <select name="applicant_type">
+                        <option value="all">All</option>
+                        <option value="Student">Students</option>
+                        <option value="Employee">Employee</option>
+                    </select>
+
+                    <select name="sex">
+                        <option value="all">All</option>
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                    </select>
+
+                    <button class="submit-btn" type="submit">
+                        Filter
+                    </button>
+
+                </div>
+
+            </form>
+
+            <div class="right-filters">
+
+                <div class="available-beds">
+                    Available Beds:
+                    <span>{{ available_beds }}</span>
+                </div>
+                <button type="button" class="building-btn" id="openBuildingModal">
+                    <i class="fi fi-rr-building"></i>
+                        ADD BUILDING
+                </button>
+                <button type="button" class="add-room-btn" id="openRoomModal">
+                    <i class="fi fi-rr-plus"></i>
+                    ADD ROOM
+                </button>
+
+                <button type="button" class="assign-btn" id="openAssignModal">
+                    <i class="fi fi-rr-plus"></i>
+                    ASSIGN BED
+                </button>
+                
+            </div>
+
+        </div>
+
+        <!-- ROOM GRID -->
+        <div class="rooms-grid">
+
+            {% for room in rooms %}
+
+            <div class="room-card">
+
+                <div class="room-header">
+
+                    <h2>
+                        ROOM {{ room.room_number }}
+                    </h2>
+
+                    <span>
+                        Capacity:
+                        {{ room.beds|length }}/{{ room.capacity }}
+                    </span>
+
+                </div>
+
+                <div class="beds">
+
+                    {% for bed in room.beds %}
+
+                        {% if bed.status == 'Occupied' %}
+
+                            <div class="bed occupied">
+
+                                B{{ bed.bed_number }}
+
+                                {% if bed.student_number %}
+                                    : {{ bed.student_number }}
+                                {% endif %}
+
+                            </div>
+
+                        {% else %}
+
+                            <div class="bed empty">
+
+                                B{{ bed.bed_number }}
+
+                            </div>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ADD BUILDING MODAL -->
+
+<div class="assign-modal" id="buildingModal">
+
+    <div class="assign-content">
+
+        <div class="assign-header">
+
+            <h2>Add Building</h2>
+
+            <span class="close-modal" id="closeBuildingModal">
+                &times;
+            </span>
+        </div>
+
+        <form method="POST" action="/add_building">
+
+            <!-- BUILDING NAME -->
+
+            <div class="input-group">
+                <label>Building Name</label>
+                <input type="text" name="building_name" required>
+            </div>
+
+            <!-- APPLICANT TYPE -->
+
+            <div class="input-group">
+
+                <label>Applicant Type</label>
+
+                <select name="applicant_type" required>
+                    
+                    <option value="Employee">
+                        Employee
+                    </option>
+
+                    <option value="Student">
+                        Student
+                    </option>
+
+                </select>
+
+            </div>
+
+            <button type="submit" class="assign-submit-btn"> Create Building</button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- ADD ROOM MODAL -->
+
+<div class="assign-modal" id="roomModal">
+
+    <div class="assign-content">
+
+        <div class="assign-header">
+
+            <h2>Add Room</h2>
+
+            <span
+            class="close-modal"
+            id="closeRoomModal">
+
+                &times;
+
+            </span>
+
+        </div>
+
+        <form method="POST" action="/add_room">
+            <div class="input-group">
+
+                <label>Building</label>
+
+                <select name="building_id" required>
+
+                    {% for building in buildings %}
+
+                    <option value="{{ building.building_id }}">
+
+                        {{ building.building_name }}
+                        -
+                        {{ building.applicant_type }}
+
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <!-- ROOM NUMBER -->
+
+            <div class="input-group">
+
+                <label>Room Number</label>
+                <input type="text" name="room_number" required>
+            </div>
+
+            <!-- CAPACITY -->
+
+            <div class="input-group">
+
+                <label>Capacity</label>
+
+                <input type="number" name="capacity" min="1" max="20" required>
+            </div>
+
+            <button type="submit" class="assign-submit-btn"> Create Room </button>
+        </form>
+
+    </div>
+
+</div>
+
+<!-- ASSIGN BED MODAL -->
+
+<div class="assign-modal" id="assignModal">
+
+    <div class="assign-content">
+
+        <div class="assign-header">
+
+            <h2>Assign Bed</h2>
+
+            <span class="close-modal" id="closeAssignModal">
+                &times;
+            </span>
+        </div>
+
+        <form method="POST" action="/assign_bed">
+
+            <!-- RESIDENT -->
+
+            <div class="input-group">
+
+                <label>Resident</label>
+
+                <select name="resident_id" required>
+
+                    <option value="">
+                        Select Resident
+                    </option>
+
+                    {% for resident in residents %}
+
+                    <option value="{{ resident.resident_id }}">
+
+                        {{ resident.full_name }}
+
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <!-- ROOM -->
+
+            <div class="input-group">
+
+                <label>Room</label>
+
+                <select name="room_id" required>
+
+                    <option value="">
+                        Select Room
+                    </option>
+
+                    {% for room in rooms %}
+
+                    <option value="{{ room.room_id }}">
+
+                        Room {{ room.room_number }}
+
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <!-- BED -->
+
+            <div class="input-group">
+
+                <label>Available Bed</label>
+
+                <select name="bed_id" required>
+
+                    <option value="">
+                        Select Bed
+                    </option>
+
+                    {% for room in rooms %}
+                        {% for bed in room.beds %}
+
+                            {% if bed.status == 'Available' %}
+
+                            <option value="{{ bed.bed_id }}">
+
+                                Room {{ room.room_number }}
+                                -
+                                Bed {{ bed.bed_number }}
+
+                            </option>
+
+                            {% endif %}
+
+                        {% endfor %}
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <button type="submit" class="assign-submit-btn">
+                Assign Bed
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- SCRIPT -->
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // SIDEBAR
+    const menuBtn = document.getElementById("menu-btn");
+    const sidebar = document.getElementById("sidebar");
+
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener("click", function () {
+            sidebar.classList.toggle("hide");
+        });
+    }
+
+    // ASSIGN BED MODAL
+    const assignModal = document.getElementById("assignModal");
+    const openBtn = document.getElementById("openAssignModal");
+    const closeBtn = document.getElementById("closeAssignModal");
+
+    if (openBtn && assignModal) {
+        openBtn.addEventListener("click", function () {
+            assignModal.style.display = "flex";
+        });
+    }
+
+    if (closeBtn && assignModal) {
+        closeBtn.addEventListener("click", function () {
+            assignModal.style.display = "none";
+        });
+    }
+
+    window.addEventListener("click", function (e) {
+        if (e.target === assignModal) {
+            assignModal.style.display = "none";
+        }
+    });
+
+});
+</script>
+
+<script>
+
+// BUILDING MODAL
+
+const buildingModal =
+    document.getElementById("buildingModal");
+
+const openBuildingModal =
+    document.getElementById("openBuildingModal");
+
+const closeBuildingModal =
+    document.getElementById("closeBuildingModal");
+
+openBuildingModal.addEventListener("click", function(){
+
+    buildingModal.style.display = "flex";
+
+});
+
+closeBuildingModal.addEventListener("click", function(){
+
+    buildingModal.style.display = "none";
+
+});
+
+window.addEventListener("click", function(e){
+
+    if(e.target === buildingModal){
+
+        buildingModal.style.display = "none";
+
+    }
+
+});
+
+</script>
+
+<!-- ADD ROOM MODAL SCRIPT -->
+<script>
+
+const roomModal =
+    document.getElementById("roomModal");
+
+const openRoomModal =
+    document.getElementById("openRoomModal");
+
+const closeRoomModal =
+    document.getElementById("closeRoomModal");
+
+openRoomModal.addEventListener("click", function(){
+
+    roomModal.style.display = "flex";
+
+});
+
+closeRoomModal.addEventListener("click", function(){
+
+    roomModal.style.display = "none";
+
+});
+
+window.addEventListener("click", function(e){
+
+    if(e.target === roomModal){
+
+        roomModal.style.display = "none";
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>

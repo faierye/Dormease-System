@@ -22,7 +22,7 @@
         <li><a href="/dashboard"><i class="fi fi-rr-apps"></i><span>Dashboard</span></a></li>
         <li><a href="/residents"><i class="fi fi-rr-user"></i><span>Residents</span></a></li>
         <li class="active"><a href="/applications"><i class="fi fi-rr-document"></i><span>Applications</span></a></li>
-        <li><a href="/rooms"><i class="fi fi-rr-bed"></i><span>Room & Beds</span></a></li>
+        <li><a href="/rooms_bed"><i class="fi fi-rr-bed"></i><span>Room & Beds</span></a></li>
         <li><a href="/payments"><i class="fi fi-rr-money"></i><span>Payments</span></a></li>
         <li><a href="/settings"><i class="fi fi-rr-settings"></i><span>Settings</span></a></li>
     </ul>
@@ -63,10 +63,12 @@
                         <option value="Employee">Employee</option>
                     </select>
 
-                    <select name="sex">
+                    <select name="status">
                         <option value="all">All</option>
-                        <option value="Female">Female</option>
-                        <option value="Male">Male</option>
+                        <option value="Pending">Pending</option>
+                        <option value="For_Interview">For Interview</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Approved">Approved</option>
                     </select>
 
                     <button class="submit-btn" type="submit">Filter</button>
@@ -74,7 +76,7 @@
             </form>
 
             <div class="sched-btn">
-                <button class="submit-btn">
+                <button class="submit-btn" id="openScheduleModal">
                     <span>Interview Schedule</span>
                     <i class="fi fi-rr-calendar-day"></i>
                 </button>
@@ -120,7 +122,7 @@
                             data-phone="{{ application.contact_number }}"
                             
                             data-date-applied="{{ application.created_at.strftime('%B %d, %Y') if application.created_at else '---' }}"
-                            data-role="{{ 'STUDENT' if application.applicant_type == 'Student' else 'Employee' }}"
+                            data-role="{{ 'Student' if application.applicant_type == 'Student' else 'Employee' }}"
                             data-interview-status="{{ application.status|default('Pending') }}">
                         </i>
                     </div>
@@ -180,6 +182,61 @@
             <button class="save-btn">Save</button>
         </div>
     </div>
+</div>
+
+<!-- SCHEDULED INTERVIEWS MODAL -->
+<div class="schedule-modal" id="scheduleModal">
+
+    <div class="schedule-content">
+
+        <!-- HEADER -->
+        <div class="schedule-header">
+            <h2>Scheduled Interviews</h2>
+
+            <div class="header-actions">
+                <i class="fi fi-rr-calendar-day"></i>
+                <span class="close-schedule">&times;</span>
+            </div>
+        </div>
+
+        <!-- TABLE HEADER -->
+        <div class="schedule-table-header">
+            <span>Name</span>
+            <span>Type</span>
+            <span>Date and Time</span>
+        </div>
+
+        <!-- LIST -->
+        <div class="schedule-list">
+
+            {% for application in applications %}
+                {% if application.status == 'For_Interview' %}
+
+                <div class="schedule-card">
+
+                    <div class="schedule-name">
+                        <strong>{{ application.first_name }}</strong>
+                        <small>{{ application.email }}</small>
+                    </div>
+
+                    <div class="schedule-type">
+                        {{ application.applicant_type }}
+                    </div>
+
+                    <div class="schedule-date">
+                        {{ application.interview_date.strftime('%m/%d/%Y') if application.interview_date else '---' }}
+                        {{ application.interview_time.strftime('%I:%M %p') if application.interview_time else '' }}
+                    </div>
+
+                </div>
+
+                {% endif %}
+            {% endfor %}
+
+        </div>
+
+    </div>
+
 </div>
 
 <!-- JS -->
@@ -267,6 +324,35 @@ saveBtn.addEventListener("click", () => {
 closeBtn.onclick = () => modal.style.display = "none";
 cancelBtn.onclick = () => modal.style.display = "none";
 window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
+</script>
+
+<script>
+
+// ===============================
+// SCHEDULE INTERVIEW LIST MODAL
+// ===============================
+
+const scheduleModal = document.getElementById("scheduleModal");
+const openScheduleBtn = document.getElementById("openScheduleModal");
+const closeScheduleBtn = document.querySelector(".close-schedule");
+
+// OPEN MODAL
+openScheduleBtn.addEventListener("click", () => {
+    scheduleModal.style.display = "flex";
+});
+
+// CLOSE BUTTON
+closeScheduleBtn.addEventListener("click", () => {
+    scheduleModal.style.display = "none";
+});
+
+// CLICK OUTSIDE TO CLOSE
+window.addEventListener("click", (e) => {
+    if (e.target === scheduleModal) {
+        scheduleModal.style.display = "none";
+    }
+});
+
 </script>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>

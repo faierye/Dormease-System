@@ -56,7 +56,6 @@ def method_not_allowed(error):
     return render_template('access_denied.html'), 405
 
 #Application Form
-
 @app.route('/application', methods = ['POST'])
 def application():
     if request.method == 'POST':
@@ -142,51 +141,73 @@ def application():
 
         #STUDENT
         if applicant_type == "student":
-            student_number = request.form['student_number']
-            program = request.form['program']
-            year_level = request.form['year_level']
-
-            cur.execute("""
-                INSERT INTO student_info 
-                (application_id, student_number, program, year_level)
-                VALUES (%s, %s, %s, %s)
-            """, (application_id, student_number, program, year_level))
-
-            # FILE
-            file = request.files['enrollment_slip']
-            if file and file.filename != "":
-                unique_name = str(uuid.uuid4()) + "_" + file.filename
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
-                file.save(filepath)
+            try:
+                student_number = request.form['student_number']
+                program = request.form['program']
+                year_level = request.form['year_level']
 
                 cur.execute("""
-                    INSERT INTO requirements_tb (application_id, file_name, file_type)
-                    VALUES (%s, %s, %s)
-                """, (application_id, unique_name, 'Enrollment'))
+                    INSERT INTO student_info 
+                    (application_id, student_number, program, year_level)
+                    VALUES (%s, %s, %s, %s)
+                """, (application_id, student_number, program, year_level))
+
+                # FILE
+                file = request.files.get('enrollment_slip')
+                if file and file.filename != "":
+                    unique_name = str(uuid.uuid4()) + "_" + file.filename
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
+                    file.save(filepath)
+
+                    cur.execute("""
+                        INSERT INTO requirements_tb (application_id, file_name, file_type)
+                        VALUES (%s, %s, %s)
+                    """, (application_id, unique_name, 'Enrollment'))
+            except KeyError as e:
+                mysql.connection.rollback()
+                cur.close()
+                return render_template(
+                    "application.html",
+                    success=False,
+                    error=True,
+                    message=f"Missing required student information: {str(e).replace('\'', '')}",
+                    period_name=period_name
+                )
 
         #EMPLOYEE
         elif applicant_type == "employee":
-            employee_number = request.form['employee_number']
-            department = request.form['department']
-            position = request.form['position']
-
-            cur.execute("""
-                INSERT INTO employee_info
-                (application_id, employee_number, department, position)
-                VALUES (%s, %s, %s, %s)
-            """, (application_id, employee_number, department, position))
-
-            # FILE
-            file = request.files['certificate']
-            if file and file.filename != "":
-                unique_name = str(uuid.uuid4()) + "_" + file.filename
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
-                file.save(filepath)
+            try:
+                employee_number = request.form['employee_number']
+                department = request.form['department']
+                position = request.form['position']
 
                 cur.execute("""
-                    INSERT INTO requirements_tb (application_id, file_name, file_type)
-                    VALUES (%s, %s, %s)
-                """, (application_id, unique_name, 'Employment'))     
+                    INSERT INTO employee_info
+                    (application_id, employee_number, department, position)
+                    VALUES (%s, %s, %s, %s)
+                """, (application_id, employee_number, department, position))
+
+                # FILE
+                file = request.files.get('certificate')
+                if file and file.filename != "":
+                    unique_name = str(uuid.uuid4()) + "_" + file.filename
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
+                    file.save(filepath)
+
+                    cur.execute("""
+                        INSERT INTO requirements_tb (application_id, file_name, file_type)
+                        VALUES (%s, %s, %s)
+                    """, (application_id, unique_name, 'Employment'))
+            except KeyError as e:
+                mysql.connection.rollback()
+                cur.close()
+                return render_template(
+                    "application.html",
+                    success=False,
+                    error=True,
+                    message=f"Missing required employee information: {str(e).replace('\'', '')}",
+                    period_name=period_name
+                )     
 
         mysql.connection.commit()
         cur.close()
@@ -353,7 +374,7 @@ def residents():
 @app.route('/applications')
 def applications():
     applicant_type = request.args.get('applicant_type', 'all')
-    sex = request.args.get('sex', 'all')
+    status = request.args.get('status', 'all')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -364,9 +385,9 @@ def applications():
         query += " AND applicant_type = %s"
         params.append(applicant_type)
 
-    if sex != 'all':
-        query += " AND sex = %s"
-        params.append(sex)
+    if status != 'all':
+        query += " AND status = %s"
+        params.append(status)
 
     cur.execute(query, params)
     data = cur.fetchall()
@@ -393,7 +414,7 @@ def application_detail(app_id):
         return redirect(url_for('applications'))
     
     # Get student or employee info
-    if application['applicant_type'].lower() == 'Student':
+    if application['applicant_type'].lower() == 'student':
         cur.execute("""
             SELECT * FROM student_info 
             WHERE application_id = %s
@@ -545,6 +566,252 @@ def update_application_status():
     cur.close()
     
     return {'success': True, 'message': f'Application {status} successfully'}
+
+# =========================
+# ROOMS & BEDS PAGE
+# =========================
+
+@app.route('/rooms_bed')
+def rooms_bed():
+
+    cur = mysql.connection.cursor()
+
+    # =========================
+    # GET ALL ROOMS
+    # =========================
+
+    cur.execute("""
+        SELECT *
+        FROM rooms_tb
+        ORDER BY room_number ASC
+    """)
+
+    rooms = cur.fetchall()
+
+    room_data = []
+
+    available_beds = 0
+
+    # =========================
+    # LOOP ROOMS
+    # =========================
+
+    for room in rooms:
+
+        # =========================
+        # GET BEDS + RESIDENT
+        # =========================
+
+        cur.execute("""
+
+            SELECT
+                beds_tb.*,
+                residents_tb.student_number,
+                residents_tb.full_name
+
+            FROM beds_tb
+
+            LEFT JOIN residents_tb
+            ON beds_tb.bed_id = residents_tb.bed_id
+
+            WHERE beds_tb.room_id = %s
+
+            ORDER BY beds_tb.bed_number ASC
+
+        """, (room['room_id'],))
+
+        beds = cur.fetchall()
+
+        # count available beds
+        for bed in beds:
+            if bed['status'] == 'Available':
+                available_beds += 1
+
+        room_data.append({
+
+            "room_id": room['room_id'],
+            "room_number": room['room_number'],
+            "capacity": room['capacity'],
+            "beds": beds
+
+        })
+
+    # =========================
+    # GET UNASSIGNED RESIDENTS
+    # =========================
+
+    cur.execute("""
+
+        SELECT *
+        FROM residents_tb
+        WHERE bed_id IS NULL
+
+    """)
+
+    residents = cur.fetchall()
+
+    cur.close()
+
+    return render_template(
+
+        'rooms_bed.html',
+
+        rooms=room_data,
+        residents=residents,
+        available_beds=available_beds
+
+    )
+
+@app.route('/add_building', methods=['POST'])
+def add_building():
+
+    building_name = request.form['building_name']
+    applicant_type = request.form['applicant_type']
+
+    cur = mysql.connection.cursor()
+
+    cur.execute("""
+
+        INSERT INTO building_tb
+        (
+            building_name,
+            applicant_type
+        )
+
+        VALUES (%s,%s)
+
+    """, (
+
+        building_name,
+        applicant_type
+
+    ))
+
+    mysql.connection.commit()
+
+    cur.close()
+
+    return redirect('/rooms_bed')
+
+@app.route('/add_room', methods=['POST'])
+def add_room():
+
+    building_id = request.form['building_id']
+    room_number = request.form['room_number']
+    capacity = request.form['capacity']
+
+    cur = mysql.connection.cursor()
+
+    # =========================
+    # INSERT ROOM
+    # =========================
+
+    cur.execute("""
+
+        INSERT INTO rooms_tb
+        (   
+            building_id,
+            room_number,
+            capacity
+        )
+
+        VALUES (%s,%s,%s)
+
+    """, (
+
+        building_id,
+        room_number,
+        capacity
+
+    ))
+
+    mysql.connection.commit()
+
+    # GET NEW ROOM ID
+    room_id = cur.lastrowid
+
+    # =========================
+    # AUTO CREATE BEDS
+    # =========================
+
+    for i in range(1, int(capacity) + 1):
+
+        cur.execute("""
+
+            INSERT INTO beds_tb
+            (
+                room_id,
+                bed_number,
+                status
+            )
+
+            VALUES (%s,%s,%s)
+
+        """, (
+
+            room_id,
+            i,
+            'Available'
+
+        ))
+
+    mysql.connection.commit()
+
+    cur.close()
+
+    return redirect('/rooms_bed')
+
+# =========================
+# ASSIGN BED
+# =========================
+
+@app.route('/assign_bed', methods=['POST'])
+def assign_bed():
+
+    resident_id = request.form['resident_id']
+    bed_id = request.form['bed_id']
+
+    cur = mysql.connection.cursor()
+
+    # =========================
+    # ASSIGN BED TO RESIDENT
+    # =========================
+
+    cur.execute("""
+
+        UPDATE residents_tb
+
+        SET bed_id = %s
+
+        WHERE resident_id = %s
+
+    """, (bed_id, resident_id))
+
+    # =========================
+    # UPDATE BED STATUS
+    # =========================
+
+    cur.execute("""
+
+        UPDATE beds_tb
+
+        SET status = 'Occupied'
+
+        WHERE bed_id = %s
+
+    """, (bed_id,))
+
+    mysql.connection.commit()
+
+    cur.close()
+
+    return redirect('/rooms_bed')
+
+@app.route('/payments')
+def payments():
+     return render_template(
+            'payments.html'
+        )
 
 if __name__ == '__main__':
     app.run( debug=True) 
