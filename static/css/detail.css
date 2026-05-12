@@ -100,6 +100,17 @@
     color: #c62828;
 }
 
+.status-badge[data-status="completed"],
+.status-badge[data-status="Completed"] {
+    background: #d4edda;
+    color: #2e7d32;
+}
+
+.status-badge[data-status="no_show"],
+.status-badge[data-status="No Show"] {
+    background: #f8d7da;
+    color: #c62828;
+}
 /* Detail Left */
 .detail-left {
     display: flex;
@@ -229,6 +240,149 @@
     border-radius: 8px;
     font-weight: 600;
     color: #666;
+}
+
+/* Missing status badges */
+.status-badge[data-status="For_Interview"] {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-badge[data-status="For_Approval"] {
+    background: #ede7f6;
+    color: #6a1b9a;
+}
+
+.status-badge[data-status="Approved"] {
+    background: #d4edda;
+    color: #2e7d32;
+}
+
+.status-badge[data-status="none"] {
+    background: #f5f5f5;
+    color: #999;
+}
+
+/* Schedule interview form inputs */
+.detail-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: "Poppins", sans-serif;
+    outline: none;
+    color: #333;
+}
+
+.detail-input:focus {
+    border-color: #3b3b98;
+}
+
+/* Full-width action button */
+.action-btn-full {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: "Poppins", sans-serif;
+}
+
+.schedule-btn {
+    background: #3b3b98;
+    color: white;
+    margin-top: 8px;
+}
+
+.schedule-btn:hover {
+    background: #2e2e7a;
+    transform: translateY(-2px);
+}
+
+/* Interview outcome buttons */
+.outcome-divider {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #aaa;
+    padding: 12px 0 6px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 4px;
+}
+
+.completed-btn,
+.no-show-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: "Poppins", sans-serif;
+}
+
+.completed-btn {
+    background: #2e7d32;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.completed-btn:hover {
+    background: #1e5e2f;
+    transform: translateY(-2px);
+}
+
+.no-show-btn {
+    background: #c62828;
+    color: white;
+}
+
+.no-show-btn:hover {
+    background: #b71c1c;
+    transform: translateY(-2px);
+}
+
+/* Final state messages */
+.final-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 28px 20px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.final-state i {
+    font-size: 40px;
+}
+
+.approved-state {
+    background: #f0fdf4;
+    color: #2e7d32;
+}
+
+.rejected-state {
+    background: #fff5f5;
+    color: #c62828;
 }
 
 /* Responsive */

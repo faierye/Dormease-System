@@ -67,8 +67,9 @@
                         <option value="all">All</option>
                         <option value="Pending">Pending</option>
                         <option value="For_Interview">For Interview</option>
-                        <option value="Rejected">Rejected</option>
+                        <option value="For_Approval">For Approval</option>
                         <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
                     </select>
 
                     <button class="submit-btn" type="submit">Filter</button>
@@ -88,7 +89,8 @@
             <span>APPLICANT ID</span>
             <span>APPLICANT NAME</span>
             <span>DATE APPLIED</span>
-            <span>STATUS</span>
+            <span>APP STATUS</span>
+            <span>INTERVIEW STATUS</span>
             <span>ACTION</span>
         </div>
 
@@ -97,34 +99,38 @@
             {% for application in applications %}
                 <div class="card">
 
-                    <div>{{ application.applicant_number or 'N/A' }}</div>
+                    <div>{{ application.applicant_number or '—' }}</div>
 
                     <div class="name">
-                        <strong>{{ application.first_name }}</strong>
+                        <strong>{{ application.first_name }} {{ application.last_name }}</strong>
                         <small>{{ application.email }}</small>
                     </div>
 
                     <div>
-                        {{ application.created_at.strftime('%Y-%m-%d') if application.created_at else 'N/A' }}
+                        {{ application.created_at.strftime('%b %d, %Y') if application.created_at else '—' }}
                     </div>
 
-                    <div class="status {{ application.status|default('Pending') }}">
-                        {{ application.status|default('Pending') }}
+                    {% set app_status = application.status if application.status else 'Pending' %}
+                    <div>
+                        <span class="status {{ app_status|replace(' ', '_') }}">
+                            {{ app_status|replace('_', ' ') }}
+                        </span>
                     </div>
 
                     <div>
-                        <i class="fi {% if application.status == 'For_Interview' %}fi-rr-eye{% else %}fi-rr-clock{% endif %} action-btn"
-                            data-id="{{ application.application_id }}"
-                            data-applicant-number="{{ application.applicant_number }}"
-                            data-name="{{ application.first_name }}"
-                            data-email="{{ application.email }}"
-                            data-address="{{ application.current_address or 'N/A' }}"
-                            data-phone="{{ application.contact_number }}"
-                            
-                            data-date-applied="{{ application.created_at.strftime('%B %d, %Y') if application.created_at else '---' }}"
-                            data-role="{{ 'Student' if application.applicant_type == 'Student' else 'Employee' }}"
-                            data-interview-status="{{ application.status|default('Pending') }}">
-                        </i>
+                        {% if application.interview_status %}
+                            <span class="int-status {{ application.interview_status }}">
+                                {{ application.interview_status|replace('_', ' ')|title }}
+                            </span>
+                        {% else %}
+                            <span class="int-status none">Not Scheduled</span>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <a href="/application/{{ application.application_id }}" class="view-btn" title="View Details">
+                            <i class="fi fi-rr-eye"></i>
+                        </a>
                     </div>
 
                 </div>
@@ -138,51 +144,6 @@
     </div>
 </div>
 
-<!-- MODAL -->
-<div id="viewModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn">&times;</span>
-
-        <h2>Schedule an Interview</h2>
-
-        <!-- TOP CARD -->
-        <div class="modal-card top-card">
-            <div class="left">
-                <h3 id="m-name">NAME HERE</h3>
-                <p id="m-address">Address here</p>
-                <p id="m-phone">Phone here</p>
-                <p id="m-email">Email here</p>
-            </div>
-
-            <div class="right">
-                <p id="m-role">Role</p>
-                <p id="m-id">000000</p>
-                <p id="m-year">Year</p>
-                <p id="m-course">Course</p>
-            </div>
-        </div>
-
-        <!-- BOTTOM CARD -->
-        <div class="modal-card bottom-card">
-            <div class="left">
-                <p class="label">Date Applied</p>
-                <p id="m-date-applied" class="muted">---</p>
-            </div>
-
-            <div class="right">
-                <p class="label">Interview Schedule</p>
-                <input type="date" id="interview-date" class="input-field">
-                <input type="time" id="interview-time" class="input-field">
-            </div>
-        </div>
-
-        <!-- ACTIONS -->
-        <div class="actions">
-            <button class="cancel-btn">Cancel</button>
-            <button class="save-btn">Save</button>
-        </div>
-    </div>
-</div>
 
 <!-- SCHEDULED INTERVIEWS MODAL -->
 <div class="schedule-modal" id="scheduleModal">
@@ -225,7 +186,7 @@
 
                     <div class="schedule-date">
                         {{ application.interview_date.strftime('%m/%d/%Y') if application.interview_date else '---' }}
-                        {{ application.interview_time.strftime('%I:%M %p') if application.interview_time else '' }}
+                        {{ application.interview_time | format_time }}
                     </div>
 
                 </div>
@@ -241,118 +202,21 @@
 
 <!-- JS -->
 <script>
-const modal = document.getElementById("viewModal");
-const closeBtn = document.querySelector(".close-btn");
-const cancelBtn = document.querySelector(".cancel-btn");
-const saveBtn = document.querySelector(".save-btn");
-
-let currentApplicationId = null;
-
-document.querySelectorAll(".action-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        const appId = btn.dataset.id;
-        
-        // ALWAYS check current status from server, not stale dataset
-        fetch(`/get_applicant_info/${appId}`)
-            .then(response => response.json())
-            .then(data => {
-                const currentStatus = data.application_status || data.status || 'Pending';
-                
-                if (currentStatus === 'For_Interview') {
-                    // Eye icon: Redirect to detail page
-                    window.location.href = "/application/" + appId;
-                } else {
-                    // Clock icon: Open scheduling modal
-                    currentApplicationId = appId;
-                    
-                    document.getElementById("m-name").innerText = btn.dataset.name;
-                    document.getElementById("m-email").innerText = btn.dataset.email;
-                    document.getElementById("m-address").innerText = btn.dataset.address;
-                    document.getElementById("m-phone").innerText = btn.dataset.phone;
-                    document.getElementById("m-role").innerText = btn.dataset.role;
-                    document.getElementById("m-date-applied").innerText = btn.dataset.dateApplied || '---';
-                    
-                    // Fetch additional details
-                    fetch(`/get_applicant_info/${appId}`)
-                        .then(response => response.json())
-                        .then(info => {
-                            if (info.success) {
-                                document.getElementById("m-id").innerText = info.student_number || info.employee_number || 'N/A';
-                                document.getElementById("m-year").innerText = info.year_level || 'N/A';
-                                document.getElementById("m-course").innerText = info.program || 'N/A';
-                            }
-                        });
-                    
-                    document.getElementById("interview-date").value = "";
-                    document.getElementById("interview-time").value = "";
-                    modal.style.display = "block";
-                }
-            });
-    });
+// Sidebar toggle
+document.getElementById("menu-btn").addEventListener("click", () => {
+    document.getElementById("sidebar").classList.toggle("hide");
 });
 
-// Save Interview Schedule
-saveBtn.addEventListener("click", () => {
-    const interviewDate = document.getElementById("interview-date").value;
-    const interviewTime = document.getElementById("interview-time").value;
-    
-    if (!interviewDate || !interviewTime) {
-        alert("Please select both date and time");
-        return;
-    }
-    
-    fetch('/schedule_interview', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            application_id: currentApplicationId,
-            interview_date: interviewDate,
-            interview_time: interviewTime
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert("Interview scheduled successfully!");
-            modal.style.display = "none";
-            location.href = '/applications?' + new Date().getTime();  // Bypasses cache 
-        }
-    })
-    .catch(error => console.error('Error:', error));
-});
-
-closeBtn.onclick = () => modal.style.display = "none";
-cancelBtn.onclick = () => modal.style.display = "none";
-window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
-</script>
-
-<script>
-
-// ===============================
-// SCHEDULE INTERVIEW LIST MODAL
-// ===============================
-
-const scheduleModal = document.getElementById("scheduleModal");
-const openScheduleBtn = document.getElementById("openScheduleModal");
+// Interview Schedule list modal
+const scheduleModal    = document.getElementById("scheduleModal");
+const openScheduleBtn  = document.getElementById("openScheduleModal");
 const closeScheduleBtn = document.querySelector(".close-schedule");
 
-// OPEN MODAL
-openScheduleBtn.addEventListener("click", () => {
-    scheduleModal.style.display = "flex";
-});
-
-// CLOSE BUTTON
-closeScheduleBtn.addEventListener("click", () => {
-    scheduleModal.style.display = "none";
-});
-
-// CLICK OUTSIDE TO CLOSE
+openScheduleBtn.addEventListener("click", () => { scheduleModal.style.display = "flex"; });
+closeScheduleBtn.addEventListener("click", () => { scheduleModal.style.display = "none"; });
 window.addEventListener("click", (e) => {
-    if (e.target === scheduleModal) {
-        scheduleModal.style.display = "none";
-    }
+    if (e.target === scheduleModal) scheduleModal.style.display = "none";
 });
-
 </script>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>

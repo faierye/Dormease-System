@@ -149,12 +149,11 @@
 
                 <!-- APPLICATION STATUS -->
                 <div class="detail-card">
-                    <h2>Application Status 
-                        <p class="status-badge" data-status="{{ application.application_status|default('pending') }}">
-                            {{ application.application_status|default('Pending')|replace('_', ' ')|title }}
-                        </p>
+                    <h2>Application Status
+                        <span class="status-badge" data-status="{{ application.status }}">
+                            {{ application.status|replace('_', ' ') if application.status else 'Pending' }}
+                        </span>
                     </h2>
-                    
                     <div class="info-row">
                         <label>Date Applied</label>
                         <p>{{ application.created_at.strftime('%B %d, %Y') if application.created_at else 'N/A' }}</p>
@@ -163,36 +162,29 @@
 
                 <!-- INTERVIEW STATUS -->
                 <div class="detail-card">
-                    <h2>Interview Status 
-                        <p class="status-badge" data-status="{{ interview_data.status|default('scheduled') }}">
-                            {{ interview_data.status|default('Scheduled')|replace('_', ' ')|title }}
-                        </p>
+                    <h2>Interview Status
+                        {% if interview_data %}
+                            <span class="status-badge" data-status="{{ interview_data.status }}">
+                                {{ interview_data.status|replace('_', ' ')|title }}
+                            </span>
+                        {% else %}
+                            <span class="status-badge" data-status="none">Not Scheduled</span>
+                        {% endif %}
                     </h2>
-                    {% if interview_data and interview_data.interview_date and interview_data.interview_time %}
+                    {% if interview_data and interview_data.interview_date %}
                     <div class="info-row">
                         <label>Interview Schedule</label>
                         <p>
-                            <strong>{{ interview_data.interview_date.strftime('%B %d, %Y') if interview_data.interview_date else 'N/A' }}</strong> 
-                            at 
-                            <strong>{{ interview_data.interview_time }}</strong>
+                            <strong>{{ interview_data.interview_date.strftime('%B %d, %Y') }}</strong>
+                            at
+                            <strong>{{ interview_data.interview_time | format_time }}</strong>
                         </p>
                     </div>
-                    {% endif %}
-
+                    {% else %}
                     <div class="info-row">
-                        {% if interview_data %}
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                {% if interview_data.status != 'completed' and interview_data.status != 'no_show' %}
-                                    <button class="interview-action-btn" data-app-id="{{ application.application_id }}" data-status="completed" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Completed</button>
-                                    <button class="interview-action-btn" data-app-id="{{ application.application_id }}" data-status="no_show" style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">No Show</button>
-                                {% endif %}
-                            </div>
-                        {% else %}
-                            <p>No interview scheduled</p>
-                        {% endif %}
+                        <p style="color:#aaa; font-size:14px;">No interview scheduled yet.</p>
                     </div>
-
-                    
+                    {% endif %}
                 </div>
 
             </div>
@@ -222,24 +214,79 @@
                     {% endif %}
                 </div>
 
-                <!-- ACTION BUTTONS -->
+                <!-- ACTION CARD -->
                 <div class="detail-card action-card">
-                    <h2>Action</h2>
+                    <h2>Actions</h2>
                     <div class="button-group">
-                        {% if application.application_status != 'approved' and application.application_status != 'rejected' %}
-                            <button class="app-action-btn" data-app-id="{{ application.application_id }}" data-action="approve" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+
+                        {% set s = application.status %}
+
+                        {% if s == 'Pending' %}
+                            <!-- PENDING: Schedule Interview -->
+                            <div class="info-row">
+                                <label>Interview Date</label>
+                                <input type="date" id="interview-date" class="detail-input">
+                            </div>
+                            <div class="info-row">
+                                <label>Interview Time</label>
+                                <input type="time" id="interview-time" class="detail-input">
+                            </div>
+                            <button class="action-btn-full schedule-btn"
+                                id="save-interview-btn"
+                                data-app-id="{{ application.application_id }}">
+                                <i class="fi fi-rr-calendar"></i>
+                                Schedule Interview
+                            </button>
+
+                        {% elif s == 'For_Interview' %}
+                            <!-- INTERVIEW SCHEDULED: Record outcome -->
+                            <div class="outcome-divider">Interview Outcome</div>
+                            <button class="completed-btn interview-action-btn"
+                                data-app-id="{{ application.application_id }}"
+                                data-status="completed">
+                                <i class="fi fi-rr-check-circle"></i>
+                                Mark Completed
+                            </button>
+                            <button class="no-show-btn interview-action-btn"
+                                data-app-id="{{ application.application_id }}"
+                                data-status="no_show">
+                                <i class="fi fi-rr-ban"></i>
+                                Mark No Show
+                            </button>
+
+                        {% elif s == 'For_Approval' %}
+                            <!-- INTERVIEW COMPLETED: Approve or Reject -->
+                            <button class="approve-btn app-action-btn"
+                                data-app-id="{{ application.application_id }}"
+                                data-action="approve">
                                 <i class="fi fi-rr-check"></i>
-                                Approve
+                                Approve Application
                             </button>
-                            <button class="app-action-btn" data-app-id="{{ application.application_id }}" data-action="reject" style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            <button class="reject-btn app-action-btn"
+                                data-app-id="{{ application.application_id }}"
+                                data-action="reject">
                                 <i class="fi fi-rr-cross"></i>
-                                Reject
+                                Reject Application
                             </button>
+
+                        {% elif s == 'Approved' %}
+                            <!-- APPROVED FINAL STATE -->
+                            <div class="final-state approved-state">
+                                <i class="fi fi-rr-badge-check"></i>
+                                <p>Applicant Approved</p>
+                            </div>
+
+                        {% elif s == 'Rejected' %}
+                            <!-- REJECTED FINAL STATE -->
+                            <div class="final-state rejected-state">
+                                <i class="fi fi-rr-ban"></i>
+                                <p>Applicant Rejected</p>
+                            </div>
+
                         {% else %}
-                            <p class="status-final">
-                                Application {{ application.application_status|title }}
-                            </p>
+                            <p style="color:#aaa;font-size:14px;">No actions available.</p>
                         {% endif %}
+
                     </div>
                 </div>
 
@@ -252,87 +299,75 @@
 
 <!-- JS -->
 <script>
-// Interview Status Buttons
-document.querySelectorAll('.interview-action-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const appId = this.getAttribute('data-app-id');
-        const status = this.getAttribute('data-status');
-        if (confirm(`Are you sure you want to mark this interview as ${status}?`)) {
-            updateInterviewStatus(appId, status);
-        }
-    });
-});
-
-// Application Action Buttons  
-document.querySelectorAll('.app-action-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const appId = this.getAttribute('data-app-id');
-        const action = this.getAttribute('data-action');
-        if (action === 'approve') {
-            approveApplication(appId);
-        } else if (action === 'reject') {
-            rejectApplication(appId);
-        }
-    });
-});
-
-function updateInterviewStatus(appId, status) {
-    fetch('/update_interview_status', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            application_id: appId,
-            interview_status: status
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Interview marked as ${status}!`);
-            location.reload();
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function approveApplication(appId) {
-    if (confirm("Are you sure you want to approve this application?")) {
-        updateApplicationStatus(appId, 'approved');
-    }
-}
-
-function rejectApplication(appId) {
-    if (confirm("Are you sure you want to reject this application?")) {
-        updateApplicationStatus(appId, 'rejected');
-    }
-}
-
-function updateApplicationStatus(appId, status) {
-    fetch('/update_application_status', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            application_id: appId,
-            status: status
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Application ${status} successfully!`);
-            location.reload();
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-// Sidebar Toggle
+// Sidebar
 document.getElementById('menu-btn').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('hide');
+});
+
+// Schedule Interview (Pending status)
+const saveInterviewBtn = document.getElementById('save-interview-btn');
+if (saveInterviewBtn) {
+    saveInterviewBtn.addEventListener('click', function () {
+        const appId = this.dataset.appId;
+        const date  = document.getElementById('interview-date').value;
+        const time  = document.getElementById('interview-time').value;
+
+        if (!date || !time) {
+            alert('Please select both a date and time.');
+            return;
+        }
+
+        fetch('/schedule_interview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ application_id: appId, interview_date: date, interview_time: time })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Interview scheduled!');
+                location.reload();
+            }
+        });
+    });
+}
+
+// Approve / Reject (For_Interview status)
+document.querySelectorAll('.app-action-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const appId  = this.dataset.appId;
+        const action = this.dataset.action;
+        const label  = action === 'approve' ? 'Approved' : 'Rejected';
+
+        if (confirm(`Are you sure you want to ${action} this application?`)) {
+            fetch('/update_application_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ application_id: appId, status: label })
+            })
+            .then(r => r.json())
+            .then(data => { if (data.success) location.reload(); });
+        }
+    });
+});
+
+// Interview Outcome: Completed / No Show (For_Interview status)
+document.querySelectorAll('.interview-action-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const appId  = this.dataset.appId;
+        const status = this.dataset.status;
+        const label  = status === 'completed' ? 'Completed' : 'No Show';
+
+        if (confirm(`Mark interview as ${label}?`)) {
+            fetch('/update_interview_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ application_id: appId, interview_status: status })
+            })
+            .then(r => r.json())
+            .then(data => { if (data.success) location.reload(); });
+        }
+    });
 });
 </script>
 

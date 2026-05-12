@@ -98,10 +98,11 @@
     <!-- YOUR EXACT CONTENT -->
     <div class="content">
         <div class="chart-box">
-            <h2>Occupancy Rate</h2>
+            <h2>Resident Distribution</h2>
             <div class="chart-container">
                 <div id="myChart"></div>
             </div>
+            <div class="chart-legend" id="chartLegend"></div>
         </div>
         <div class="side-box">
             <div class="box">
@@ -183,26 +184,64 @@
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
-    google.charts.load('current', {'packages':['corechart']});
-    google.charts.setOnLoadCallback(drawChart);
+google.charts.load('current', { packages: ['corechart'] });
+google.charts.setOnLoadCallback(initDashboard);
 
-    function drawChart() {
-        var data = google.visualization.arrayToDataTable([
-            ['Category', 'Value'],
-            ['Students', 40],
-            ['Employees', 25]
-        ]);
-        var options = {
-            pieHole: 0.4,
-            legend: 'none',
-            width: '100%',
-            height: 350,
-            colors: ['#3b3b98', '#f1c40f', '#5dade2', '#f7dc6f']
-        };
-        var chart = new google.visualization.PieChart(document.getElementById('myChart'));
-        chart.draw(data, options);
-    }   
-    window.addEventListener("resize", drawChart);
+let cachedStats = null;
+
+function initDashboard() {
+    fetch('/api/dashboard_stats')
+        .then(r => r.json())
+        .then(stats => {
+            cachedStats = stats;
+            drawResidentChart(stats);
+            renderLegend(stats);
+        });
+}
+
+function drawResidentChart(stats) {
+    var data = google.visualization.arrayToDataTable([
+        ['Type', 'Count'],
+        ['Students',  stats.student_count  || 0],
+        ['Employees', stats.employee_count || 0]
+    ]);
+
+    var options = {
+        pieHole: 0.4,
+        legend: 'none',
+        colors: ['#3b3b98', '#f1c40f'],
+        chartArea: { width: '90%', height: '85%' },
+        fontName: 'Poppins',
+        tooltip: { text: 'both' }
+    };
+
+    var chart = new google.visualization.PieChart(document.getElementById('myChart'));
+    chart.draw(data, options);
+}
+
+function renderLegend(stats) {
+    const legend = document.getElementById('chartLegend');
+    const total = stats.student_count + stats.employee_count || 1;
+    legend.innerHTML = `
+        <div class="legend-item">
+            <span class="legend-dot" style="background:#3b3b98"></span>
+            <span>Students — <strong>${stats.student_count}</strong>
+                <em>(${Math.round(stats.student_count / total * 100)}%)</em>
+            </span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot" style="background:#f1c40f"></span>
+            <span>Employees — <strong>${stats.employee_count}</strong>
+                <em>(${Math.round(stats.employee_count / total * 100)}%)</em>
+            </span>
+        </div>
+        <div class="legend-total">Total Residents: <strong>${stats.total_residents}</strong></div>
+    `;
+}
+
+window.addEventListener('resize', () => {
+    if (cachedStats) drawResidentChart(cachedStats);
+});
 </script>
 </body>
 </html>

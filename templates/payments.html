@@ -10,10 +10,8 @@
 
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
-
     <div class="logo">
         <i class="fi fi-rr-menu-burger" id="menu-btn"></i>
-
         <div class="logo-text">
             <h2>DormEase</h2>
             <span>Admin</span>
@@ -21,49 +19,12 @@
     </div>
 
     <ul class="menu">
-
-        <li>
-            <a href="/dashboard">
-                <i class="fi fi-rr-apps"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-
-        <li>
-            <a href="/residents">
-                <i class="fi fi-rr-user"></i>
-                <span>Residents</span>
-            </a>
-        </li>
-
-        <li>
-            <a href="/applications">
-                <i class="fi fi-rr-document"></i>
-                <span>Applications</span>
-            </a>
-        </li>
-
-        <li>
-            <a href="/rooms_bed">
-                <i class="fi fi-rr-bed"></i>
-                <span>Rooms & Beds</span>
-            </a>
-        </li>
-
-        <li class="active">
-            <a href="/payments">
-                <i class="fi fi-rr-money"></i>
-                <span>Payments</span>
-            </a>
-        </li>
-
-        <li>
-            <a href="/settings">
-                <i class="fi fi-rr-settings"></i>
-                <span>Settings</span>
-            </a>
-        </li>
-
+        <li><a href="/dashboard"><i class="fi fi-rr-apps"></i><span>Dashboard</span></a></li>
+        <li><a href="/residents"><i class="fi fi-rr-user"></i><span>Residents</span></a></li>
+        <li><a href="/applications"><i class="fi fi-rr-document"></i><span>Applications</span></a></li>
+        <li><a href="/rooms_bed"><i class="fi fi-rr-bed"></i><span>Room & Beds</span></a></li>
+        <li class="active"><a href="/payments"><i class="fi fi-rr-money"></i><span>Payments</span></a></li>
+        <li><a href="/settings"><i class="fi fi-rr-settings"></i><span>Settings</span></a></li>
     </ul>
 
     <div class="logout">
@@ -72,98 +33,90 @@
             <span>Logout</span>
         </a>
     </div>
-
 </div>
 
-<!-- MAIN -->
 <div class="container">
-
     <div class="main">
 
         <!-- TOPBAR -->
         <div class="topbar">
-
             <div class="topbar-left">
                 <h1>Payments</h1>
             </div>
-
             <div class="top-icons">
                 <i class="fi fi-rr-bell"></i>
                 <i class="fi fi-rr-envelope"></i>
             </div>
-
         </div>
 
         <!-- FILTERS -->
         <div class="filters">
-
-            <form method="GET" action="/rooms_bed">
-
+            <form method="GET" action="/payments">
                 <div class="filter-group">
-
                     <i class="fi fi-rr-filter"></i>
 
                     <select name="applicant_type">
-                        <option value="all">All</option>
-                        <option value="Student">Students</option>
-                        <option value="Employee">Employee</option>
+                        <option value="all">All Types</option>
+                        <option value="Student" {% if request.args.get('applicant_type') == 'Student' %}selected{% endif %}>Students</option>
+                        <option value="Employee" {% if request.args.get('applicant_type') == 'Employee' %}selected{% endif %}>Employees</option>
                     </select>
 
                     <select name="status">
-                        <option value="all">All</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Paid">Paid</option>
+                        <option value="all">All Status</option>
+                        <option value="Pending" {% if request.args.get('status') == 'Pending' %}selected{% endif %}>Pending</option>
+                        <option value="Paid" {% if request.args.get('status') == 'Paid' %}selected{% endif %}>Paid</option>
                     </select>
 
-                    <button class="submit-btn" type="submit">
-                        Filter
-                    </button>
-
+                    <button class="submit-btn" type="submit">Filter</button>
                 </div>
-
             </form>
-
         </div>
 
         <!-- TABLE HEADER -->
         <div class="table-header">
-            <span>APPLICANT NAME</span>
-            <span>ROOM NUMBER</span>
-            <span>STATUS</span>
+            <span>RESIDENT NAME</span>
+            <span>ASSIGNED ROOM</span>
+            <span>PAYMENT STATUS</span>
+            <span>DATE</span>
             <span>ACTION</span>
         </div>
 
         <!-- CARDS -->
-        {% if applications %}
-            {% for application in applications %}
+        {% if payments %}
+            {% for p in payments %}
                 <div class="card">
 
                     <div class="name">
-                        <strong>{{ application.first_name }}</strong>
-                        <small>{{ application.email }}</small>
+                        <strong>{{ p.full_name }}</strong>
+                        <small>{{ p.applicant_type|title }}</small>
+                    </div>
+
+                    <div>{{ p.assigned_room }}</div>
+
+                    <div>
+                        <span class="pay-status {{ p.payment_status }}">
+                            {{ p.payment_status }}
+                        </span>
                     </div>
 
                     <div>
-                        {{ application.created_at.strftime('%Y-%m-%d') if application.created_at else 'N/A' }}
-                    </div>
-
-                    <div class="status {{ application.status|default('Pending') }}">
-                        {{ application.status|default('Pending') }}
+                        {{ p.payment_date.strftime('%b %d, %Y') if p.payment_date else '—' }}
                     </div>
 
                     <div>
-                        <i class="fi {% if application.status == 'For_Interview' %}fi-rr-eye{% else %}fi-rr-clock{% endif %} action-btn"
-                            data-id="{{ application.application_id }}"
-                            data-applicant-number="{{ application.applicant_number }}"
-                            data-name="{{ application.first_name }}"
-                            data-email="{{ application.email }}"
-                            data-address="{{ application.current_address or 'N/A' }}"
-                            data-phone="{{ application.contact_number }}"
-                            
-                            data-date-applied="{{ application.created_at.strftime('%B %d, %Y') if application.created_at else '---' }}"
-                            data-role="{{ 'Student' if application.applicant_type == 'Student' else 'Employee' }}"
-                            data-interview-status="{{ application.status|default('Pending') }}">
-                        </i>
+                        {% if p.payment_status == 'Pending' %}
+                            <button class="mark-paid-btn"
+                                data-resident-id="{{ p.resident_id }}"
+                                data-name="{{ p.full_name }}">
+                                <i class="fi fi-rr-dollar"></i>
+                                Mark as Paid
+                            </button>
+                        {% else %}
+                            <span class="paid-label">
+                                <i class="fi fi-rr-check-circle"></i>
+                                Paid
+                            </span>
+                        {% endif %}
                     </div>
 
                 </div>
@@ -175,10 +128,85 @@
         {% endif %}
 
     </div>
-
 </div>
 
-<!-- SCRIPT -->
+<!-- MARK AS PAID MODAL -->
+<div class="pay-modal" id="payModal">
+    <div class="pay-content">
+
+        <div class="pay-header">
+            <h2>Mark as Paid</h2>
+            <span class="close-pay">&times;</span>
+        </div>
+
+        <p class="pay-resident-name" id="payResidentName"></p>
+
+        <div class="pay-body">
+            <div class="pay-field">
+                <label>Payment Status</label>
+                <div class="status-display">
+                    <span class="pay-status Paid">Paid</span>
+                </div>
+            </div>
+
+            <div class="pay-field">
+                <label>Date of Payment</label>
+                <input type="date" id="paymentDate" class="pay-input">
+            </div>
+        </div>
+
+        <div class="pay-footer">
+            <button class="cancel-pay-btn" id="cancelPayBtn">Cancel</button>
+            <button class="save-pay-btn" id="savePayBtn">Save Payment</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- JS -->
+<script>
+document.getElementById('menu-btn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('hide');
+});
+
+const payModal = document.getElementById('payModal');
+let selectedResidentId = null;
+
+document.querySelectorAll('.mark-paid-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        selectedResidentId = this.dataset.residentId;
+        document.getElementById('payResidentName').textContent = this.dataset.name;
+        document.getElementById('paymentDate').value = '';
+        payModal.style.display = 'flex';
+    });
+});
+
+function closePayModal() {
+    payModal.style.display = 'none';
+    selectedResidentId = null;
+}
+
+document.getElementById('cancelPayBtn').addEventListener('click', closePayModal);
+document.querySelector('.close-pay').addEventListener('click', closePayModal);
+window.addEventListener('click', e => { if (e.target === payModal) closePayModal(); });
+
+document.getElementById('savePayBtn').addEventListener('click', function () {
+    const date = document.getElementById('paymentDate').value;
+
+    if (!date) {
+        alert('Please select the date of payment.');
+        return;
+    }
+
+    fetch('/mark_paid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resident_id: selectedResidentId, payment_date: date })
+    })
+    .then(r => r.json())
+    .then(data => { if (data.success) location.reload(); });
+});
+</script>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 

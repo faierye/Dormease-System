@@ -277,16 +277,12 @@ select {
     -moz-appearance: none;
 }
 
-/* Search */
-.search-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
 
-.search-group input {
-    padding: 10px;
-    border: 1px solid #3f3c9d;
+.right-filters{
+    display:flex;
+    align-items:center;
+    gap:15px;
+    margin-left:auto;
 }
 
 /* Table Header */
@@ -337,4 +333,214 @@ select {
     border: none;
     border-radius: 10px;
     cursor: pointer;
+}
+
+.residents-btn{
+    width:100%;
+    height:48px;
+    border:none;
+    border-radius:14px;
+    background:#5da9ff;
+    color:white;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.residents-btn:hover{
+    transform:translateY(-2px);
+}
+
+/* ACTION COLUMN */
+.view-info-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: #3b3b98;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: "Poppins", sans-serif;
+}
+
+.view-info-btn:hover {
+    background: #2e2e7a;
+    transform: translateY(-1px);
+}
+
+.unassigned-badge {
+    font-size: 13px;
+    color: #999;
+    font-style: italic;
+}
+
+/* =========================
+   VIEW INFO MODAL
+========================= */
+
+.view-info-content {
+    width: 620px;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+}
+
+.vi-section {
+    margin-bottom: 22px;
+}
+
+.vi-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #3b3b98;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #eaeaf8;
+}
+
+.vi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.vi-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.vi-item.vi-full {
+    grid-column: 1 / -1;
+}
+
+.vi-item label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.vi-item p {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+    background: #f8f8fb;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 0;
+}
+
+/* =========================
+   ADD RESIDENT MODAL
+========================= */
+
+.assign-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+}
+
+.assign-content {
+    width: 450px;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+}
+
+.assign-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.assign-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #3b3b98;
+}
+
+.close-modal {
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+}
+
+.close-modal:hover {
+    color: #333;
+}
+
+/* =========================
+   FORM FIELDS
+========================= */
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.input-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+}
+
+.input-group select,
+.input-group input {
+    height: 45px;
+    border: none;
+    border-radius: 12px;
+    padding: 0 14px;
+    background: #f3f3f3;
+    outline: none;
+    font-size: 14px;
+    font-family: "Poppins", sans-serif;
+    color: #333;
+}
+
+.input-group select:focus,
+.input-group input:focus {
+    background: #eaeaf8;
+}
+
+/* =========================
+   SUBMIT BUTTON
+========================= */
+
+.assign-submit-btn {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 14px;
+    background: #3b3b98;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 6px;
+}
+
+.assign-submit-btn:hover {
+    background: #2e2e7a;
+    transform: translateY(-2px);
 }

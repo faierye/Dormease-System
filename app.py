@@ -5,6 +5,7 @@ import MySQLdb.cursors
 import os
 import uuid
 import datetime
+import resend
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -12,6 +13,201 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.secret_key = "secret123"
 
 mysql = MySQL(app)
+
+resend.api_key = app.config['RESEND_API_KEY']
+
+# ─── EMAIL HELPERS ────────────────────────────────────────────────────────────
+
+def _send_email(to_email, subject, html):
+    try:
+        resend.Emails.send({
+            "from":    app.config['RESEND_FROM'],
+            "to":      [to_email],
+            "subject": subject,
+            "html":    html,
+        })
+        return True
+    except Exception as e:
+        print(f"[Email Error] {e}")
+        return False
+
+
+def _email_wrapper(title, accent, body_html):
+    return f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;
+                background:#f9f9f9;border-radius:12px;overflow:hidden;
+                border:1px solid #e0e0e0;">
+        <div style="background:#3b3b98;padding:28px 30px;text-align:center;">
+            <h1 style="color:white;margin:0;font-size:22px;letter-spacing:1px;">DormEase</h1>
+            <p style="color:rgba(255,255,255,0.75);margin:6px 0 0;font-size:13px;">
+                Dormitory Management System
+            </p>
+        </div>
+        <div style="padding:32px 30px;background:white;">
+            <div style="background:{accent};border-radius:8px;padding:12px 18px;
+                        margin-bottom:24px;font-weight:600;font-size:15px;color:white;">
+                {title}
+            </div>
+            {body_html}
+        </div>
+        <div style="background:#f5f5f5;padding:14px 30px;text-align:center;
+                    border-top:1px solid #e8e8e8;">
+            <p style="color:#aaa;font-size:11px;margin:0;">
+                This is an automated message from DormEase. Please do not reply.
+            </p>
+        </div>
+    </div>
+    """
+
+
+def _fmt_date(date_str):
+    try:
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d").strftime("%B %d, %Y")
+    except Exception:
+        return date_str
+
+
+def _fmt_time(time_str):
+    try:
+        return datetime.datetime.strptime(time_str, "%H:%M").strftime("%I:%M %p")
+    except Exception:
+        return time_str
+
+
+def send_interview_email(applicant, interview_date, interview_time):
+    name         = f"{applicant['first_name']} {applicant['last_name']}"
+    date_display = _fmt_date(interview_date)
+    time_display = _fmt_time(interview_time)
+
+    body = f"""
+        <p style="font-size:15px;color:#333;">Dear <strong>{name}</strong>,</p>
+        <p style="color:#555;line-height:1.7;">
+            We are pleased to inform you that your interview has been officially scheduled.
+            Please see the details below and make sure to arrive on time.
+        </p>
+        <table style="width:100%;border-collapse:collapse;margin:20px 0;
+                      font-size:14px;background:#f5f7ff;border-radius:8px;overflow:hidden;">
+            <tr>
+                <td style="padding:12px 16px;color:#888;font-weight:600;
+                           width:40%;border-bottom:1px solid #e8e8e8;">Interview Date</td>
+                <td style="padding:12px 16px;color:#333;
+                           border-bottom:1px solid #e8e8e8;"><strong>{date_display}</strong></td>
+            </tr>
+            <tr>
+                <td style="padding:12px 16px;color:#888;font-weight:600;">Interview Time</td>
+                <td style="padding:12px 16px;color:#333;"><strong>{time_display}</strong></td>
+            </tr>
+        </table>
+        <p style="color:#555;line-height:1.7;">
+            <strong>Instructions:</strong><br>
+            &bull; Arrive at least 10 minutes before your scheduled time.<br>
+            &bull; Bring a valid school/company ID.<br>
+            &bull; Dress appropriately and professionally.<br>
+            &bull; If you cannot attend, please contact the dormitory office as soon as possible.
+        </p>
+        <p style="color:#555;line-height:1.7;">We look forward to meeting you. Good luck!</p>
+        <p style="color:#3b3b98;font-weight:600;margin-top:24px;">— The DormEase Team</p>
+    """
+    html = _email_wrapper("📅 Interview Scheduled", "#3b3b98", body)
+    _send_email(applicant['email'], "Your Interview Has Been Scheduled – DormEase", html)
+
+
+def send_approved_email(applicant):
+    name = f"{applicant['first_name']} {applicant['last_name']}"
+    body = f"""
+        <p style="font-size:15px;color:#333;">Dear <strong>{name}</strong>,</p>
+        <p style="color:#555;line-height:1.7;">
+            We are delighted to inform you that your application to DormEase has been
+            <strong style="color:#2e7d32;">APPROVED</strong>. Congratulations!
+        </p>
+        <p style="color:#555;line-height:1.7;">
+            You will officially become a resident of the dormitory. Our team will be in
+            touch with the next steps regarding your move-in schedule, room assignment,
+            and other important details.
+        </p>
+        <p style="color:#555;line-height:1.7;">
+            <strong>What to expect next:</strong><br>
+            &bull; You will be assigned to a room and bed.<br>
+            &bull; You will receive information about dormitory rules and payment schedules.<br>
+            &bull; Please prepare the required documents for your move-in date.
+        </p>
+        <p style="color:#555;line-height:1.7;">
+            Welcome to the DormEase community! We look forward to having you with us.
+        </p>
+        <p style="color:#3b3b98;font-weight:600;margin-top:24px;">— The DormEase Team</p>
+    """
+    html = _email_wrapper("✅ Application Approved", "#2e7d32", body)
+    _send_email(applicant['email'], "Congratulations! Your Application is Approved – DormEase", html)
+
+
+def send_rejected_email(applicant):
+    name = f"{applicant['first_name']} {applicant['last_name']}"
+    body = f"""
+        <p style="font-size:15px;color:#333;">Dear <strong>{name}</strong>,</p>
+        <p style="color:#555;line-height:1.7;">
+            Thank you for your interest in DormEase and for taking the time to go through
+            our application process. After careful review, we regret to inform you that
+            your application has <strong style="color:#c62828;">not been approved</strong>
+            at this time.
+        </p>
+        <p style="color:#555;line-height:1.7;">
+            This decision does not reflect negatively on you as a person. We encourage you
+            to apply again in the next application period, as slots may become available.
+        </p>
+        <p style="color:#555;line-height:1.7;">
+            If you have questions or would like further clarification, please feel free to
+            contact the dormitory office directly.
+        </p>
+        <p style="color:#555;line-height:1.7;">
+            Thank you again for your interest, and we wish you all the best.
+        </p>
+        <p style="color:#3b3b98;font-weight:600;margin-top:24px;">— The DormEase Team</p>
+    """
+    html = _email_wrapper("❌ Application Not Approved", "#c62828", body)
+    _send_email(applicant['email'], "Application Status Update – DormEase", html)
+
+
+def _get_applicant_for_email(app_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT first_name, last_name, email
+        FROM applications_tb WHERE application_id = %s
+    """, (app_id,))
+    applicant = cur.fetchone()
+    cur.close()
+    return applicant
+
+@app.template_filter('format_time')
+def format_time(t):
+    if t is None:
+        return ''
+    if isinstance(t, datetime.timedelta):
+        total = int(t.total_seconds())
+        hours, remainder = divmod(total, 3600)
+        minutes = remainder // 60
+        ampm = 'AM' if hours < 12 else 'PM'
+        hours12 = hours % 12 or 12
+        return f'{hours12}:{minutes:02d} {ampm}'
+    if hasattr(t, 'strftime'):
+        return t.strftime('%I:%M %p')
+    return str(t)
+
+# Canonical status values — normalises old lowercase DB entries on read
+_STATUS_MAP = {
+    'approved and done': 'Approved',
+    'approved':          'Approved',
+    'rejected':          'Rejected',
+    'pending':           'Pending',
+    'for_interview':     'For_Interview',
+    'for interview':     'For_Interview',
+    'for_approval':      'For_Approval',
+    'for approval':      'For_Approval',
+}
+
+def normalize_status(row):
+    raw = (row.get('status') or 'Pending').strip()
+    row['status'] = _STATUS_MAP.get(raw.lower(), raw)
+    return row
 
 #Landing Page
 
@@ -333,42 +529,134 @@ def manage_period():
 #Residents
 @app.route('/residents')
 def residents():
-
     applicant_type = request.args.get('applicant_type', 'all')
     sex = request.args.get('sex', 'all')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
     query = """
-        SELECT a.applicant_number,
-               CONCAT_WS(' ', a.first_name, a.middle_name, a.last_name, a.extension_name) AS full_name,
-               a.contact_number,
-               a.email,
-               a.applicant_type,
-               COALESCE(s.student_number, e.employee_number) AS id_number,
-               COALESCE(s.program, e.department, 'N/A') AS assigned_room,
-               a.sex
-        FROM applications_tb a
-        LEFT JOIN student_info s ON a.application_id = s.application_id
-        LEFT JOIN employee_info e ON a.application_id = e.application_id
-        WHERE a.status = 'Approved'
+        SELECT
+            residents_tb.resident_id,
+            residents_tb.bed_id,
+            CONCAT(applications_tb.first_name, ' ', applications_tb.last_name) AS full_name,
+            applications_tb.email,
+            applications_tb.contact_number,
+            applications_tb.applicant_type,
+            applications_tb.sex,
+            COALESCE(student_info.student_number, employee_info.employee_number) AS id_number,
+            CASE
+                WHEN beds_tb.bed_id IS NOT NULL
+                THEN CONCAT('Room ', rooms_tb.room_number, ' - Bed ', beds_tb.bed_number)
+                ELSE NULL
+            END AS assigned_room
+        FROM residents_tb
+        LEFT JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
+        LEFT JOIN student_info ON residents_tb.application_id = student_info.application_id
+        LEFT JOIN employee_info ON residents_tb.application_id = employee_info.application_id
+        LEFT JOIN beds_tb ON residents_tb.bed_id = beds_tb.bed_id
+        LEFT JOIN rooms_tb ON beds_tb.room_id = rooms_tb.room_id
+        WHERE 1=1
     """
-
     params = []
 
     if applicant_type != 'all':
-        query += " AND a.applicant_type = %s"
+        query += " AND applications_tb.applicant_type = %s"
         params.append(applicant_type)
 
     if sex != 'all':
-        query += " AND a.sex = %s"
+        query += " AND applications_tb.sex = %s"
         params.append(sex)
 
     cur.execute(query, params)
-    data = cur.fetchall()
+    residents = cur.fetchall()
+
+    # Approved applicants not yet added as residents
+    cur.execute("""
+        SELECT
+            application_id,
+            CONCAT(first_name, ' ', last_name) AS full_name,
+            applicant_type
+        FROM applications_tb
+        WHERE status = 'Approved'
+        AND application_id NOT IN (
+            SELECT application_id FROM residents_tb
+            WHERE application_id IS NOT NULL
+        )
+        ORDER BY first_name ASC
+    """)
+    applicants = cur.fetchall()
+
     cur.close()
 
-    return render_template('residents.html', residents=data, applicant_type=applicant_type, sex=sex)
+    return render_template('residents.html', residents=residents, applicants=applicants)
+
+# Resident Info (JSON for View Info modal)
+@app.route('/get_resident_info/<int:resident_id>')
+def get_resident_info(resident_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("""
+        SELECT
+            residents_tb.resident_id,
+            residents_tb.start_date,
+            applications_tb.application_id,
+            applications_tb.applicant_number,
+            applications_tb.first_name,
+            applications_tb.middle_name,
+            applications_tb.last_name,
+            applications_tb.extension_name,
+            applications_tb.age,
+            applications_tb.sex,
+            applications_tb.email,
+            applications_tb.contact_number,
+            applications_tb.permanent_address,
+            applications_tb.current_address,
+            applications_tb.applicant_type,
+            applications_tb.created_at,
+            CASE
+                WHEN beds_tb.bed_id IS NOT NULL
+                THEN CONCAT('Room ', rooms_tb.room_number, ' - Bed ', beds_tb.bed_number)
+                ELSE NULL
+            END AS assigned_room
+        FROM residents_tb
+        JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
+        LEFT JOIN beds_tb ON residents_tb.bed_id = beds_tb.bed_id
+        LEFT JOIN rooms_tb ON beds_tb.room_id = rooms_tb.room_id
+        WHERE residents_tb.resident_id = %s
+    """, (resident_id,))
+
+    data = cur.fetchone()
+
+    if not data:
+        cur.close()
+        return {'success': False}
+
+    # Convert dates to strings for JSON
+    if data.get('start_date'):
+        data['start_date'] = data['start_date'].strftime('%B %d, %Y')
+    if data.get('created_at'):
+        data['created_at'] = data['created_at'].strftime('%B %d, %Y')
+
+    # Get student or employee info
+    app_id = data['application_id']
+    if data['applicant_type'].lower() == 'student':
+        cur.execute("""
+            SELECT student_number, program, year_level
+            FROM student_info WHERE application_id = %s
+        """, (app_id,))
+        extra = cur.fetchone()
+        data['extra'] = extra or {}
+    else:
+        cur.execute("""
+            SELECT employee_number, department, position
+            FROM employee_info WHERE application_id = %s
+        """, (app_id,))
+        extra = cur.fetchone()
+        data['extra'] = extra or {}
+
+    cur.close()
+    data['success'] = True
+    return data
 
 #Application Details
 @app.route('/applications')
@@ -378,22 +666,55 @@ def applications():
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
-    query = "SELECT * FROM applications_tb WHERE 1=1"
+    query = """
+        SELECT
+            applications_tb.*,
+            interview_sched.status AS interview_status,
+            interview_sched.interview_date,
+            interview_sched.interview_time
+        FROM applications_tb
+        LEFT JOIN interview_sched
+            ON applications_tb.application_id = interview_sched.application_id
+        WHERE 1=1
+    """
     params = []
 
     if applicant_type != 'all':
-        query += " AND applicant_type = %s"
+        query += " AND applications_tb.applicant_type = %s"
         params.append(applicant_type)
 
     if status != 'all':
-        query += " AND status = %s"
-        params.append(status)
+        if status == 'Approved':
+            query += " AND applications_tb.status IN ('Approved', 'Approved and Done')"
+        elif status == 'For_Approval':
+            query += " AND applications_tb.status IN ('For_Approval', 'For Approval')"
+        else:
+            query += " AND applications_tb.status = %s"
+            params.append(status)
 
     cur.execute(query, params)
-    data = cur.fetchall()
+    data = [normalize_status(row) for row in cur.fetchall()]
     cur.close()
 
     return render_template('applications.html', applications=data)
+
+@app.route('/add_resident', methods=['POST'])
+def add_resident():
+    application_id = request.form['application_id']
+    start_date = request.form['start_date']
+
+    cur = mysql.connection.cursor()
+
+    cur.execute("""
+        INSERT INTO residents_tb (application_id, start_date)
+        VALUES (%s, %s)
+    """, (application_id, start_date))
+
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect('/residents')
+
 
 # Applicant Detail Page
 @app.route('/application/<int:app_id>')
@@ -408,10 +729,12 @@ def application_detail(app_id):
     """, (app_id,))
 
     application = cur.fetchone()
-    
+
     if not application:
         cur.close()
         return redirect(url_for('applications'))
+
+    normalize_status(application)
     
     # Get student or employee info
     if application['applicant_type'].lower() == 'student':
@@ -524,142 +847,155 @@ def schedule_interview():
     
     mysql.connection.commit()
     cur.close()
-    
-    return {'success': True, 'message' :f'Interview {"created" if rows_affected == 1 else "updated"}!'}
+
+    applicant = _get_applicant_for_email(app_id)
+    if applicant:
+        send_interview_email(applicant, interview_date, interview_time)
+
+    return {'success': True, 'message': f'Interview {"created" if rows_affected == 1 else "updated"}!'}
 
 # Update Interview Status
 @app.route('/update_interview_status', methods=['POST'])
 def update_interview_status():
     data = request.get_json()
     app_id = data.get('application_id')
-    interview_status = data.get('interview_status')  # 'scheduled', 'completed', or 'no show'
-    
+    interview_status = data.get('interview_status')
+
     cur = mysql.connection.cursor()
-    
+
     cur.execute("""
-        UPDATE interview_sched 
+        UPDATE interview_sched
         SET status = %s
         WHERE application_id = %s
     """, (interview_status, app_id))
-    
+
+    # Drive application status based on interview outcome
+    if interview_status == 'no_show':
+        cur.execute("""
+            UPDATE applications_tb SET status = 'Rejected'
+            WHERE application_id = %s
+        """, (app_id,))
+    elif interview_status == 'completed':
+        cur.execute("""
+            UPDATE applications_tb SET status = 'For_Approval'
+            WHERE application_id = %s
+        """, (app_id,))
+
     mysql.connection.commit()
     cur.close()
-    
+
+    if interview_status == 'no_show':
+        applicant = _get_applicant_for_email(app_id)
+        if applicant:
+            send_rejected_email(applicant)
+
     return {'success': True, 'message': f'Interview status updated to {interview_status}'}
 
 # Update Application Status
 @app.route('/update_application_status', methods=['POST'])
 def update_application_status():
+
     data = request.get_json()
+
     app_id = data.get('application_id')
-    status = data.get('status')  # 'approved' or 'rejected'
-    
+    status = data.get('status')
+
     cur = mysql.connection.cursor()
-    
+
     cur.execute("""
-        UPDATE applications_tb 
-        SET application_status = %s
+        UPDATE applications_tb
+        SET status = %s
         WHERE application_id = %s
     """, (status, app_id))
-    
+
     mysql.connection.commit()
     cur.close()
-    
-    return {'success': True, 'message': f'Application {status} successfully'}
+
+    applicant = _get_applicant_for_email(app_id)
+    if applicant:
+        if status == 'Approved':
+            send_approved_email(applicant)
+        elif status == 'Rejected':
+            send_rejected_email(applicant)
+
+    return {'success': True}
 
 # =========================
 # ROOMS & BEDS PAGE
 # =========================
-
 @app.route('/rooms_bed')
 def rooms_bed():
 
-    cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # =========================
-    # GET ALL ROOMS
-    # =========================
-
+    # ROOMS
     cur.execute("""
         SELECT *
         FROM rooms_tb
         ORDER BY room_number ASC
     """)
-
     rooms = cur.fetchall()
 
     room_data = []
-
     available_beds = 0
-
-    # =========================
-    # LOOP ROOMS
-    # =========================
 
     for room in rooms:
 
-        # =========================
-        # GET BEDS + RESIDENT
-        # =========================
-
         cur.execute("""
-
             SELECT
                 beds_tb.*,
-                residents_tb.student_number,
-                residents_tb.full_name
+                applications_tb.first_name,
+                applications_tb.last_name
 
             FROM beds_tb
 
             LEFT JOIN residents_tb
             ON beds_tb.bed_id = residents_tb.bed_id
 
+            LEFT JOIN applications_tb
+            ON residents_tb.application_id = applications_tb.application_id
+
             WHERE beds_tb.room_id = %s
 
             ORDER BY beds_tb.bed_number ASC
-
         """, (room['room_id'],))
 
         beds = cur.fetchall()
 
-        # count available beds
         for bed in beds:
             if bed['status'] == 'Available':
                 available_beds += 1
 
         room_data.append({
-
             "room_id": room['room_id'],
             "room_number": room['room_number'],
             "capacity": room['capacity'],
             "beds": beds
-
         })
 
-    # =========================
-    # GET UNASSIGNED RESIDENTS
-    # =========================
+    cur.execute("SELECT * FROM building_tb")
+    buildings = cur.fetchall()
 
     cur.execute("""
-
-        SELECT *
+        SELECT
+            residents_tb.resident_id,
+            CONCAT(applications_tb.first_name, ' ', applications_tb.last_name) AS full_name
         FROM residents_tb
-        WHERE bed_id IS NULL
-
+        JOIN applications_tb
+            ON residents_tb.application_id = applications_tb.application_id
+        WHERE residents_tb.bed_id IS NULL
+        ORDER BY applications_tb.first_name ASC
     """)
-
     residents = cur.fetchall()
 
     cur.close()
 
     return render_template(
-
         'rooms_bed.html',
-
         rooms=room_data,
         residents=residents,
-        available_beds=available_beds
-
+        available_beds=available_beds,
+        buildings=buildings
     )
 
 @app.route('/add_building', methods=['POST'])
@@ -698,62 +1034,62 @@ def add_room():
 
     building_id = request.form['building_id']
     room_number = request.form['room_number']
-    capacity = request.form['capacity']
+    capacity = int(request.form['capacity'])
 
     cur = mysql.connection.cursor()
 
-    # =========================
     # INSERT ROOM
-    # =========================
-
     cur.execute("""
-
         INSERT INTO rooms_tb
-        (   
-            building_id,
-            room_number,
-            capacity
-        )
-
-        VALUES (%s,%s,%s)
-
-    """, (
-
-        building_id,
-        room_number,
-        capacity
-
-    ))
+        (building_id, room_number, capacity)
+        VALUES (%s, %s, %s)
+    """, (building_id, room_number, capacity))
 
     mysql.connection.commit()
 
-    # GET NEW ROOM ID
     room_id = cur.lastrowid
 
-    # =========================
-    # AUTO CREATE BEDS
-    # =========================
-
-    for i in range(1, int(capacity) + 1):
+    # CREATE BEDS
+    for i in range(1, capacity + 1):
 
         cur.execute("""
-
             INSERT INTO beds_tb
-            (
-                room_id,
-                bed_number,
-                status
-            )
+            (room_id, bed_number, status)
+            VALUES (%s, %s, %s)
+        """, (room_id, i, 'Available'))
 
-            VALUES (%s,%s,%s)
+    mysql.connection.commit()
+    cur.close()
 
-        """, (
+    return redirect('/rooms_bed')
 
+@app.route('/add_bed', methods=['POST'])
+def add_bed():
+
+    room_id = request.form['room_id']
+    bed_number = request.form['bed_number']
+    status = request.form['status']
+
+    cur = mysql.connection.cursor()
+
+    cur.execute("""
+
+        INSERT INTO beds_tb
+        (
             room_id,
-            i,
-            'Available'
+            bed_number,
+            status
+        )
 
-        ))
+        VALUES (%s, %s, %s)
+
+    """, (
+
+        room_id,
+        bed_number,
+        status
+
+    ))
 
     mysql.connection.commit()
 
@@ -805,13 +1141,147 @@ def assign_bed():
 
     cur.close()
 
-    return redirect('/rooms_bed')
+    next_url = request.form.get('next', '/rooms_bed')
+    return redirect(next_url)
+
+@app.route('/api/dashboard_stats')
+def dashboard_stats():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("""
+        SELECT COUNT(*) AS total FROM residents_tb
+        JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
+        WHERE LOWER(applications_tb.applicant_type) IN ('student', 'employee')
+    """)
+    total_residents = cur.fetchone()['total']
+
+    cur.execute("""
+        SELECT COUNT(*) AS total FROM residents_tb
+        JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
+        WHERE LOWER(applications_tb.applicant_type) = 'student'
+    """)
+    student_count = cur.fetchone()['total']
+
+    cur.execute("""
+        SELECT COUNT(*) AS total FROM residents_tb
+        JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
+        WHERE LOWER(applications_tb.applicant_type) = 'employee'
+    """)
+    employee_count = cur.fetchone()['total']
+
+    cur.close()
+
+    return {
+        'total_residents': total_residents,
+        'student_count':   student_count,
+        'employee_count':  employee_count
+    }
+
 
 @app.route('/payments')
 def payments():
-     return render_template(
-            'payments.html'
-        )
+    applicant_type = request.args.get('applicant_type', 'all')
+    pay_status = request.args.get('status', 'all')
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    query = """
+        SELECT
+            residents_tb.resident_id,
+            CONCAT(applications_tb.first_name, ' ', applications_tb.last_name) AS full_name,
+            applications_tb.applicant_type,
+            CASE
+                WHEN beds_tb.bed_id IS NOT NULL
+                THEN CONCAT('Room ', rooms_tb.room_number, ' — Bed ', beds_tb.bed_number)
+                ELSE 'Unassigned'
+            END AS assigned_room,
+            COALESCE(payment_tb.status, 'Pending') AS payment_status,
+            payment_tb.payment_date
+        FROM residents_tb
+        JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
+        LEFT JOIN beds_tb ON residents_tb.bed_id = beds_tb.bed_id
+        LEFT JOIN rooms_tb ON beds_tb.room_id = rooms_tb.room_id
+        LEFT JOIN payment_tb ON residents_tb.resident_id = payment_tb.resident_id
+        WHERE applications_tb.applicant_type IN ('student', 'Student', 'employee', 'Employee')
+    """
+    params = []
+
+    if applicant_type != 'all':
+        query += " AND applications_tb.applicant_type = %s"
+        params.append(applicant_type)
+
+    if pay_status != 'all':
+        if pay_status == 'Pending':
+            query += " AND (payment_tb.status = 'Pending' OR payment_tb.status IS NULL)"
+        else:
+            query += " AND payment_tb.status = %s"
+            params.append(pay_status)
+
+    query += " ORDER BY applications_tb.first_name ASC"
+
+    cur.execute(query, params)
+    payments_data = cur.fetchall()
+    cur.close()
+
+    return render_template('payments.html', payments=payments_data)
+
+
+@app.route('/mark_paid', methods=['POST'])
+def mark_paid():
+    data = request.get_json()
+    resident_id = data.get('resident_id')
+    payment_date = data.get('payment_date')
+
+    cur = mysql.connection.cursor()
+
+    cur.execute("SELECT payment_id FROM payment_tb WHERE resident_id = %s", (resident_id,))
+    existing = cur.fetchone()
+
+    if existing:
+        cur.execute("""
+            UPDATE payment_tb SET status = 'Paid', payment_date = %s
+            WHERE resident_id = %s
+        """, (payment_date, resident_id))
+    else:
+        cur.execute("""
+            INSERT INTO payment_tb (resident_id, status, payment_date)
+            VALUES (%s, 'Paid', %s)
+        """, (resident_id, payment_date))
+
+    mysql.connection.commit()
+    cur.close()
+
+    return {'success': True}
+
+@app.route('/test_email')
+def test_email():
+    to = request.args.get('to', '')
+    if not to:
+        return {
+            'success': False,
+            'message': 'Provide a recipient: /test_email?to=you@example.com'
+        }, 400
+
+    html = _email_wrapper(
+        "🔧 Test Email",
+        "#3b3b98",
+        """
+        <p style="font-size:15px;color:#333;">Hello from <strong>DormEase</strong>!</p>
+        <p style="color:#555;line-height:1.7;">
+            This is a test email to confirm that the Resend API is connected
+            and working correctly. If you received this, the email system is live.
+        </p>
+        <p style="color:#3b3b98;font-weight:600;margin-top:24px;">— The DormEase Team</p>
+        """
+    )
+
+    ok = _send_email(to, "DormEase – Email Test", html)
+
+    if ok:
+        return {'success': True,  'message': f'Test email sent to {to}'}
+    else:
+        return {'success': False, 'message': 'Resend API call failed — check server logs'}, 500
+
 
 if __name__ == '__main__':
-    app.run( debug=True) 
+    app.run(debug=True)

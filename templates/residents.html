@@ -100,10 +100,11 @@
                 </div>
             </form>
 
-            <div class="search-group">
-                <input type="text" placeholder="Search">
-                <i class="fi fi-rr-search"></i>
-                <i class="fi fi-rr-sort"></i>
+            <div class="right-filters">
+                <button type="button" class="residents-btn" id="openResidentModal">
+                    <i class="fi fi-rr-plus"></i>
+                        ADD RESIDENT
+                </button>
             </div>
         </div>
 
@@ -124,9 +125,23 @@
                         <strong>{{ resident.full_name }}</strong>
                         <small>{{ resident.email }}</small>
                     </div>
-                    <div>{{ resident.assigned_room or 'N/A' }}</div>
-                    <div>{{ resident.id_number or 'N/A' }}</div>
-                    <div>{{ resident.contact_number or 'N/A' }}</div>
+                    <div>
+                        {% if resident.assigned_room %}
+                            {{ resident.assigned_room }}
+                        {% else %}
+                            <span class="unassigned-badge">Unassigned</span>
+                        {% endif %}
+                    </div>
+                    <div>{{ resident.id_number or '—' }}</div>
+                    <div>{{ resident.contact_number or '—' }}</div>
+                    <div>
+                        <button class="view-info-btn"
+                            data-resident-id="{{ resident.resident_id }}"
+                            title="View Resident Info">
+                            <i class="fi fi-rr-eye"></i>
+                            View Info
+                        </button>
+                    </div>
                 </div>
             {% endfor %}
         {% else %}
@@ -139,6 +154,259 @@
 
 </div>
 
+<!-- ADD RESIDENT MODAL -->
+
+<div class="assign-modal" id="residentModal">
+
+    <div class="assign-content">
+
+        <div class="assign-header">
+            <h2>Add Resident</h2>
+            <span class="close-modal" id="closeAssignModal">&times;</span>
+        </div>
+
+        <form method="POST" action="/add_resident">
+
+            <!-- APPLICANT -->
+            <div class="input-group">
+                <label>Approved Applicant</label>
+                <select name="application_id" required>
+                    <option value="">Select Applicant</option>
+                    {% for applicant in applicants %}
+                    <option value="{{ applicant.application_id }}">
+                        {{ applicant.full_name }} — {{ applicant.applicant_type|title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- START DATE -->
+            <div class="input-group">
+                <label>Start Date</label>
+                <input type="date" name="start_date" required>
+            </div>
+
+            <button type="submit" class="assign-submit-btn">
+                Add Resident
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- VIEW INFO MODAL -->
+
+<div class="assign-modal" id="viewInfoModal">
+
+    <div class="view-info-content">
+
+        <div class="assign-header">
+            <h2>Resident Information</h2>
+            <span class="close-modal" id="closeViewModal">&times;</span>
+        </div>
+
+        <!-- PERSONAL INFO -->
+        <div class="vi-section">
+            <h3 class="vi-section-title">Personal Information</h3>
+            <div class="vi-grid">
+                <div class="vi-item">
+                    <label>Full Name</label>
+                    <p id="vi-fullname">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Applicant Number</label>
+                    <p id="vi-appnum">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Age</label>
+                    <p id="vi-age">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Sex</label>
+                    <p id="vi-sex">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Email</label>
+                    <p id="vi-email">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Contact Number</label>
+                    <p id="vi-contact">—</p>
+                </div>
+                <div class="vi-item vi-full">
+                    <label>Permanent Address</label>
+                    <p id="vi-permanent">—</p>
+                </div>
+                <div class="vi-item vi-full">
+                    <label>Current Address</label>
+                    <p id="vi-current">—</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STUDENT / EMPLOYEE INFO -->
+        <div class="vi-section" id="vi-student-section">
+            <h3 class="vi-section-title">Student Information</h3>
+            <div class="vi-grid">
+                <div class="vi-item">
+                    <label>Student Number</label>
+                    <p id="vi-student-num">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Program</label>
+                    <p id="vi-program">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Year Level</label>
+                    <p id="vi-year">—</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="vi-section" id="vi-employee-section">
+            <h3 class="vi-section-title">Employee Information</h3>
+            <div class="vi-grid">
+                <div class="vi-item">
+                    <label>Employee Number</label>
+                    <p id="vi-emp-num">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Department</label>
+                    <p id="vi-dept">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Position</label>
+                    <p id="vi-position">—</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESIDENCY -->
+        <div class="vi-section">
+            <h3 class="vi-section-title">Residency</h3>
+            <div class="vi-grid">
+                <div class="vi-item">
+                    <label>Start Date</label>
+                    <p id="vi-startdate">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Assigned Room</label>
+                    <p id="vi-room">—</p>
+                </div>
+                <div class="vi-item">
+                    <label>Date Applied</label>
+                    <p id="vi-applied">—</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // SIDEBAR
+
+    const menuBtn =
+        document.getElementById("menu-btn");
+
+    const sidebar =
+        document.getElementById("sidebar");
+
+    if (menuBtn && sidebar) {
+
+        menuBtn.addEventListener("click", function () {
+
+            sidebar.classList.toggle("hide");
+
+        });
+
+    }
+
+
+    // ADD RESIDENT MODAL
+    const residentModal      = document.getElementById("residentModal");
+    const openResidentModal  = document.getElementById("openResidentModal");
+    const closeResidentModal = document.getElementById("closeAssignModal");
+
+    openResidentModal.addEventListener("click", function () {
+        residentModal.style.display = "flex";
+    });
+
+    closeResidentModal.addEventListener("click", function () {
+        residentModal.style.display = "none";
+    });
+
+    // VIEW INFO MODAL
+    const viewInfoModal      = document.getElementById("viewInfoModal");
+    const closeViewModal     = document.getElementById("closeViewModal");
+
+    closeViewModal.addEventListener("click", function () {
+        viewInfoModal.style.display = "none";
+    });
+
+    function setText(id, val) {
+        document.getElementById(id).textContent = val || "—";
+    }
+
+    document.querySelectorAll(".view-info-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            const residentId = this.dataset.residentId;
+
+            fetch("/get_resident_info/" + residentId)
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d.success) return;
+
+                    const fullName = [d.first_name, d.middle_name, d.last_name, d.extension_name]
+                        .filter(Boolean).join(" ");
+
+                    setText("vi-fullname",  fullName);
+                    setText("vi-appnum",    d.applicant_number);
+                    setText("vi-age",       d.age);
+                    setText("vi-sex",       d.sex);
+                    setText("vi-email",     d.email);
+                    setText("vi-contact",   d.contact_number);
+                    setText("vi-permanent", d.permanent_address);
+                    setText("vi-current",   d.current_address);
+                    setText("vi-startdate", d.start_date);
+                    setText("vi-room",      d.assigned_room || "Unassigned");
+                    setText("vi-applied",   d.created_at);
+
+                    const isStudent = d.applicant_type.toLowerCase() === "student";
+                    document.getElementById("vi-student-section").style.display  = isStudent ? "block" : "none";
+                    document.getElementById("vi-employee-section").style.display = isStudent ? "none"  : "block";
+
+                    if (isStudent) {
+                        setText("vi-student-num", d.extra.student_number);
+                        setText("vi-program",     d.extra.program);
+                        setText("vi-year",        d.extra.year_level);
+                    } else {
+                        setText("vi-emp-num",  d.extra.employee_number);
+                        setText("vi-dept",     d.extra.department);
+                        setText("vi-position", d.extra.position);
+                    }
+
+                    viewInfoModal.style.display = "flex";
+                });
+        });
+    });
+
+    // CLOSE ON BACKDROP CLICK
+    window.addEventListener("click", function (e) {
+        if (e.target === residentModal) residentModal.style.display = "none";
+        if (e.target === viewInfoModal) viewInfoModal.style.display = "none";
+    });
+
+});
+
+</script>
 </body>
 </html>

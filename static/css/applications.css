@@ -270,7 +270,7 @@ select {
 /* TABLE HEADER */
 .table-header {
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr 1fr 1fr;
+    grid-template-columns: 1.2fr 2fr 1fr 1.2fr 1.2fr 60px;
     padding: 20px;
     color: #555;
     justify-items: center;
@@ -279,7 +279,7 @@ select {
 /* CARDS */
 .card {
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr 1fr 1fr;
+    grid-template-columns: 1.2fr 2fr 1fr 1.2fr 1.2fr 60px;
     background: #eee;
     margin: 10px 20px;
     padding: 20px;
@@ -308,12 +308,13 @@ select {
     height: 70px;
 }
 
-/* STATUS BADGE */
+/* APPLICATION STATUS BADGE */
 .status {
     padding: 5px 10px;
     border-radius: 10px;
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .status.Pending {
@@ -322,8 +323,13 @@ select {
 }
 
 .status.For_Interview {
-    background: #e3f2fd !important;
-    color: #1976d2 !important;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.status.For_Approval {
+    background: #ede7f6;
+    color: #6a1b9a;
 }
 
 .status.Approved {
@@ -336,17 +342,52 @@ select {
     color: #c62828;
 }
 
-/* ICON */
-.action-btn {
+/* INTERVIEW STATUS BADGE */
+.int-status {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.int-status.scheduled {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.int-status.completed {
+    background: #d4edda;
+    color: #2e7d32;
+}
+
+.int-status.no_show {
+    background: #f8d7da;
+    color: #c62828;
+}
+
+.int-status.none {
+    color: #aaa;
+    font-size: 14px;
+}
+
+/* VIEW BUTTON */
+.view-btn {
     font-size: 20px;
     color: #3b3b98;
     cursor: pointer;
     transition: 0.2s;
+    text-decoration: none;
 }
 
-.action-btn:hover {
+.view-btn:hover {
     color: #2d2d6f;
     transform: scale(1.1);
+}
+
+.no-action {
+    color: #ccc;
+    font-size: 18px;
 }
 
 /* MODAL BACKGROUND */
