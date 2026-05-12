@@ -5,7 +5,10 @@ import MySQLdb.cursors
 import os
 import uuid
 import datetime
-import resend
+import smtplib
+import requests as http_requests
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -14,18 +17,19 @@ app.secret_key = "secret123"
 
 mysql = MySQL(app)
 
-resend.api_key = app.config['RESEND_API_KEY']
-
 # ─── EMAIL HELPERS ────────────────────────────────────────────────────────────
 
 def _send_email(to_email, subject, html):
     try:
-        resend.Emails.send({
-            "from":    app.config['RESEND_FROM'],
-            "to":      [to_email],
-            "subject": subject,
-            "html":    html,
-        })
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From']    = app.config['MAIL_FROM']
+        msg['To']      = to_email
+        msg.attach(MIMEText(html, 'html'))
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(app.config['GMAIL_USER'], app.config['GMAIL_PASSWORD'])
+            server.sendmail(app.config['GMAIL_USER'], to_email, msg.as_string())
         return True
     except Exception as e:
         print(f"[Email Error] {e}")
@@ -108,7 +112,7 @@ def send_interview_email(applicant, interview_date, interview_time):
         <p style="color:#555;line-height:1.7;">We look forward to meeting you. Good luck!</p>
         <p style="color:#3b3b98;font-weight:600;margin-top:24px;">— The DormEase Team</p>
     """
-    html = _email_wrapper("📅 Interview Scheduled", "#3b3b98", body)
+    html = _email_wrapper("Interview Scheduled", "#3b3b98", body)
     _send_email(applicant['email'], "Your Interview Has Been Scheduled – DormEase", html)
 
 
@@ -136,7 +140,7 @@ def send_approved_email(applicant):
         </p>
         <p style="color:#3b3b98;font-weight:600;margin-top:24px;">— The DormEase Team</p>
     """
-    html = _email_wrapper("✅ Application Approved", "#2e7d32", body)
+    html = _email_wrapper("Application Approved", "#2e7d32", body)
     _send_email(applicant['email'], "Congratulations! Your Application is Approved – DormEase", html)
 
 
@@ -163,7 +167,7 @@ def send_rejected_email(applicant):
         </p>
         <p style="color:#3b3b98;font-weight:600;margin-top:24px;">— The DormEase Team</p>
     """
-    html = _email_wrapper("❌ Application Not Approved", "#c62828", body)
+    html = _email_wrapper("Application Not Approved", "#c62828", body)
     _send_email(applicant['email'], "Application Status Update – DormEase", html)
 
 
@@ -176,6 +180,38 @@ def _get_applicant_for_email(app_id):
     applicant = cur.fetchone()
     cur.close()
     return applicant
+
+
+# ─── SMS HELPERS ──────────────────────────────────────────────────────────────
+
+def _normalize_ph_number(number):
+    n = ''.join(filter(str.isdigit, str(number)))
+    if n.startswith('0'):
+        n = '63' + n[1:]
+    if not n.startswith('63'):
+        n = '63' + n
+    return '+' + n
+
+def _send_sms(to_number, message):
+    try:
+        number = _normalize_ph_number(to_number)
+        response = http_requests.post(
+            app.config['SMS_API_URL'],
+            headers={
+                'x-api-key':    app.config['SMS_API_KEY'],
+                'Content-Type': 'application/json',
+            },
+            json={
+                'recipient': number,
+                'message':   message,
+            },
+            timeout=15
+        )
+        print(f"[SMS] to={number} status={response.status_code} body={response.text[:200]}")
+        return response.status_code in (200, 201)
+    except Exception as e:
+        print(f"[SMS Error] {e}")
+        return False
 
 @app.template_filter('format_time')
 def format_time(t):
@@ -480,7 +516,11 @@ def dashboard():
     cur.execute("SELECT COUNT(*) FROM beds_tb WHERE status='Available'")
     available_beds = cur.fetchone()[0]
 
-    cur.execute("SELECT COUNT(*) FROM payment_tb WHERE status='Pending'")
+    cur.execute("""
+        SELECT COUNT(*) FROM residents_tb
+        LEFT JOIN payment_tb ON residents_tb.resident_id = payment_tb.resident_id
+        WHERE payment_tb.status = 'Pending' OR payment_tb.status IS NULL
+    """)
     pending_payments = cur.fetchone()[0]
 
     # 🔥 GET CURRENT PERIOD (latest one)
@@ -709,6 +749,13 @@ def add_resident():
         INSERT INTO residents_tb (application_id, start_date)
         VALUES (%s, %s)
     """, (application_id, start_date))
+
+    resident_id = cur.lastrowid
+
+    cur.execute("""
+        INSERT INTO payment_tb (resident_id, status)
+        VALUES (%s, 'Pending')
+    """, (resident_id,))
 
     mysql.connection.commit()
     cur.close()
@@ -1252,6 +1299,39 @@ def mark_paid():
     cur.close()
 
     return {'success': True}
+
+@app.route('/send_payment_reminder', methods=['POST'])
+def send_payment_reminder():
+    data        = request.get_json()
+    resident_id = data.get('resident_id')
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT
+            CONCAT(applications_tb.first_name, ' ', applications_tb.last_name) AS full_name,
+            applications_tb.contact_number
+        FROM residents_tb
+        JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
+        WHERE residents_tb.resident_id = %s
+    """, (resident_id,))
+    resident = cur.fetchone()
+    cur.close()
+
+    if not resident or not resident.get('contact_number'):
+        return {'success': False, 'message': 'Resident or contact number not found'}, 404
+
+    name   = resident['full_name']
+    number = resident['contact_number']
+
+    message = f"Hi {name}, your DormEase dorm payment is PENDING. Please settle it at your earliest convenience. Thank you!"
+
+    ok = _send_sms(number, message)
+
+    if ok:
+        return {'success': True,  'message': f'Reminder sent to {number}'}
+    else:
+        return {'success': False, 'message': 'SMS gateway error — please try again later'}
+
 
 @app.route('/test_email')
 def test_email():

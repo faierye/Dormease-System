@@ -103,13 +103,18 @@
                         {{ p.payment_date.strftime('%b %d, %Y') if p.payment_date else '—' }}
                     </div>
 
-                    <div>
+                    <div class="action-col">
                         {% if p.payment_status == 'Pending' %}
                             <button class="mark-paid-btn"
                                 data-resident-id="{{ p.resident_id }}"
                                 data-name="{{ p.full_name }}">
                                 <i class="fi fi-rr-dollar"></i>
                                 Mark as Paid
+                            </button>
+                            <button class="remind-btn"
+                                data-resident-id="{{ p.resident_id }}">
+                                <i class="fi fi-rr-bell"></i>
+                                Send Reminder
                             </button>
                         {% else %}
                             <span class="paid-label">
@@ -189,6 +194,38 @@ function closePayModal() {
 document.getElementById('cancelPayBtn').addEventListener('click', closePayModal);
 document.querySelector('.close-pay').addEventListener('click', closePayModal);
 window.addEventListener('click', e => { if (e.target === payModal) closePayModal(); });
+
+document.querySelectorAll('.remind-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const residentId = this.dataset.residentId;
+        this.disabled = true;
+        this.innerHTML = '<i class="fi fi-rr-loading"></i> Sending...';
+
+        fetch('/send_payment_reminder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resident_id: residentId })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                this.innerHTML = '<i class="fi fi-rr-check"></i> Sent!';
+                this.style.background = '#2e7d32';
+            } else {
+                alert('SMS failed: ' + data.message);
+                this.disabled = false;
+                this.innerHTML = '<i class="fi fi-rr-bell"></i> Send Reminder';
+                this.style.background = '';
+            }
+        })
+        .catch(err => {
+            alert('Network error. Please try again.');
+            this.disabled = false;
+            this.innerHTML = '<i class="fi fi-rr-bell"></i> Send Reminder';
+            this.style.background = '';
+        });
+    });
+});
 
 document.getElementById('savePayBtn').addEventListener('click', function () {
     const date = document.getElementById('paymentDate').value;

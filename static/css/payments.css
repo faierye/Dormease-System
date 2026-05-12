@@ -349,6 +349,43 @@ select {
     transform: translateY(-2px);
 }
 
+/* ACTION COLUMN */
+.action-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+}
+
+/* SEND REMINDER BUTTON */
+.remind-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: #ff8f00;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.remind-btn:hover {
+    background: #e65100;
+    transform: translateY(-2px);
+}
+
+.remind-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* PAID LABEL */
 .paid-label {
     display: flex;
