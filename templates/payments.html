@@ -44,7 +44,9 @@
                 <h1>Payments</h1>
             </div>
             <div class="top-icons">
-                <i class="fi fi-rr-bell"></i>
+                <div class="notif-wrapper" id="notifBell">
+                    <i class="fi fi-rr-bell"></i>
+                </div>
                 <i class="fi fi-rr-envelope"></i>
             </div>
         </div>
@@ -108,7 +110,7 @@
                             <button class="mark-paid-btn"
                                 data-resident-id="{{ p.resident_id }}"
                                 data-name="{{ p.full_name }}">
-                                <i class="fi fi-rr-dollar"></i>
+                                <i class="fi fi-rr-peso-sign"></i>
                                 Mark as Paid
                             </button>
                             <button class="remind-btn"

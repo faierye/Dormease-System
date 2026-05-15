@@ -70,7 +70,9 @@
             <h1>Dashboard</h1>
         </div>
         <div class="icons">
-            <i class="fi fi-rr-bell"></i>
+            <div class="notif-wrapper" id="notifBell">
+                <i class="fi fi-rr-bell"></i>
+            </div>
             <i class="fi fi-rr-envelope"></i>
         </div>
     </div>
@@ -177,13 +179,19 @@
         </div>
         <div class="recent">
             <h2>Recent Activities</h2>
-            <ul id="activityList"></ul>
+            <ul id="activityList">
+                <li class="activity-loading">Loading...</li>
+            </ul>
         </div>
     </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
+document.getElementById('menu-btn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('hide');
+});
+
 google.charts.load('current', { packages: ['corechart'] });
 google.charts.setOnLoadCallback(initDashboard);
 
@@ -242,6 +250,22 @@ function renderLegend(stats) {
 window.addEventListener('resize', () => {
     if (cachedStats) drawResidentChart(cachedStats);
 });
+
+fetch('/api/recent_activities')
+    .then(r => r.json())
+    .then(data => {
+        const list = document.getElementById('activityList');
+        if (!data.activities || data.activities.length === 0) {
+            list.innerHTML = '<li class="activity-empty">No recent activities.</li>';
+            return;
+        }
+        list.innerHTML = data.activities.map(a =>
+            `<li class="activity-item">
+                <span class="activity-action">${a.action}</span>
+                <span class="activity-time">${a.time}</span>
+            </li>`
+        ).join('');
+    });
 </script>
 </body>
 </html>

@@ -73,7 +73,9 @@
                 <h1>Residents</h1>
             </div>
             <div class="top-icons">
-                <i class="fi fi-rr-bell"></i>
+                <div class="notif-wrapper" id="notifBell">
+                    <i class="fi fi-rr-bell"></i>
+                </div>
                 <i class="fi fi-rr-envelope"></i>
             </div>
         </div>
@@ -86,14 +88,14 @@
 
                     <select name="applicant_type">
                         <option value="all">All</option>
-                        <option value="Student">Students</option>
-                        <option value="Employee">Employee</option>
+                        <option value="Student" {% if request.args.get('applicant_type') == 'Student' %}selected{% endif %}>Students</option>
+                        <option value="Employee" {% if request.args.get('applicant_type') == 'Employee' %}selected{% endif %}>Employee</option>
                     </select>
 
                     <select name="sex">
                         <option value="all">All</option>
-                        <option value="Female">Female</option>
-                        <option value="Male">Male</option>
+                        <option value="Female" {% if request.args.get('sex') == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Male" {% if request.args.get('sex') == 'Male' %}selected{% endif %}>Male</option>
                     </select>
 
                     <button class="submit-btn" type="submit">Filter</button>
@@ -124,6 +126,11 @@
                     <div class="name">
                         <strong>{{ resident.full_name }}</strong>
                         <small>{{ resident.email }}</small>
+                        {% if resident.end_date %}
+                            <span class="status-badge inactive">Inactive</span>
+                        {% else %}
+                            <span class="status-badge active">Active</span>
+                        {% endif %}
                     </div>
                     <div>
                         {% if resident.assigned_room %}
@@ -134,13 +141,30 @@
                     </div>
                     <div>{{ resident.id_number or '—' }}</div>
                     <div>{{ resident.contact_number or '—' }}</div>
-                    <div>
+                    <div class="action-col">
                         <button class="view-info-btn"
                             data-resident-id="{{ resident.resident_id }}"
                             title="View Resident Info">
                             <i class="fi fi-rr-eye"></i>
                             View Info
                         </button>
+                        {% if not show_archived %}
+                            {% if not resident.end_date %}
+                                <button class="end-stay-btn"
+                                    data-resident-id="{{ resident.resident_id }}"
+                                    data-name="{{ resident.full_name }}">
+                                    <i class="fi fi-rr-sign-out-alt"></i>
+                                    End Stay
+                                </button>
+                            {% else %}
+                                <button class="archive-btn"
+                                    data-resident-id="{{ resident.resident_id }}"
+                                    data-name="{{ resident.full_name }}">
+                                    <i class="fi fi-rr-archive"></i>
+                                    Archive
+                                </button>
+                            {% endif %}
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
@@ -292,6 +316,10 @@
                     <p id="vi-startdate">—</p>
                 </div>
                 <div class="vi-item">
+                    <label>End Date</label>
+                    <p id="vi-enddate">—</p>
+                </div>
+                <div class="vi-item">
                     <label>Assigned Room</label>
                     <p id="vi-room">—</p>
                 </div>
@@ -304,6 +332,22 @@
 
     </div>
 
+</div>
+
+<!-- END STAY MODAL -->
+<div class="assign-modal" id="endStayModal">
+    <div class="assign-content">
+        <div class="assign-header">
+            <h2>End Resident Stay</h2>
+            <span class="close-modal" id="closeEndStayModal">&times;</span>
+        </div>
+        <p id="endStayName" style="font-size:14px;color:#555;margin-bottom:16px;font-weight:500;"></p>
+        <div class="input-group">
+            <label>End Date</label>
+            <input type="date" id="endStayDate">
+        </div>
+        <button class="assign-submit-btn" id="confirmEndStay">Confirm End Stay</button>
+    </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
@@ -377,6 +421,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     setText("vi-permanent", d.permanent_address);
                     setText("vi-current",   d.current_address);
                     setText("vi-startdate", d.start_date);
+                    setText("vi-enddate",   d.end_date || "Still Active");
                     setText("vi-room",      d.assigned_room || "Unassigned");
                     setText("vi-applied",   d.created_at);
 
@@ -399,10 +444,61 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // END STAY MODAL
+    const endStayModal = document.getElementById("endStayModal");
+    const closeEndStayModal = document.getElementById("closeEndStayModal");
+    let endStayResidentId = null;
+
+    document.querySelectorAll(".end-stay-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            endStayResidentId = this.dataset.residentId;
+            document.getElementById("endStayName").textContent = this.dataset.name;
+            document.getElementById("endStayDate").value = "";
+            endStayModal.style.display = "flex";
+        });
+    });
+
+    closeEndStayModal.addEventListener("click", function() {
+        endStayModal.style.display = "none";
+    });
+
+    document.getElementById("confirmEndStay").addEventListener("click", function() {
+        const date = document.getElementById("endStayDate").value;
+        if (!date) { alert("Please select an end date."); return; }
+
+        fetch("/set_end_date", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ resident_id: endStayResidentId, end_date: date })
+        })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); });
+    });
+
+    // ARCHIVE BUTTONS
+    document.querySelectorAll(".archive-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            const name = this.dataset.name;
+            if (!confirm("Archive " + name + "? They will be removed from the active list.")) return;
+
+            fetch("/archive_resident", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ resident_id: this.dataset.residentId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) location.reload();
+                else alert(data.message);
+            });
+        });
+    });
+
     // CLOSE ON BACKDROP CLICK
     window.addEventListener("click", function (e) {
         if (e.target === residentModal) residentModal.style.display = "none";
         if (e.target === viewInfoModal) viewInfoModal.style.display = "none";
+        if (e.target === endStayModal) endStayModal.style.display = "none";
     });
 
 });

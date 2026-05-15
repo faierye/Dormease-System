@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DormEase Settings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="logo">
+        <i class="fi fi-rr-menu-burger" id="menu-btn"></i>
+        <div class="logo-text">
+            <h2>DormEase</h2>
+            <span>Admin</span>
+        </div>
+    </div>
+    <ul class="menu">
+        <li><a href="/dashboard"><i class="fi fi-rr-apps"></i><span>Dashboard</span></a></li>
+        <li><a href="/residents"><i class="fi fi-rr-user"></i><span>Residents</span></a></li>
+        <li><a href="/applications"><i class="fi fi-rr-document"></i><span>Applications</span></a></li>
+        <li><a href="/rooms_bed"><i class="fi fi-rr-bed"></i><span>Room & Beds</span></a></li>
+        <li><a href="/payments"><i class="fi fi-rr-money"></i><span>Payments</span></a></li>
+        <li class="active"><a href="/settings"><i class="fi fi-rr-settings"></i><span>Settings</span></a></li>
+    </ul>
+    <div class="logout">
+        <a href="/" class="logout-link">
+            <i class="fi fi-rr-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>Settings</h1>
+            </div>
+            <div class="top-icons">
+                <div class="notif-wrapper" id="notifBell">
+                    <i class="fi fi-rr-bell"></i>
+                </div>
+                <i class="fi fi-rr-envelope"></i>
+            </div>
+        </div>
+
+        <!-- SECTION TITLE -->
+        <div class="section-header">
+            <i class="fi fi-rr-archive"></i>
+            <h2>Archived Residents</h2>
+        </div>
+
+        {% if grouped %}
+            {% for period_name, residents in grouped.items() %}
+                {% if residents %}
+                <div class="period-folder">
+
+                    <!-- FOLDER HEADER (clickable toggle) -->
+                    <button class="folder-toggle" onclick="toggleFolder(this)">
+                        <div class="folder-left">
+                            <i class="fi fi-rr-folder folder-icon"></i>
+                            <span class="folder-name">{{ period_name }}</span>
+                            <span class="folder-count">{{ residents|length }} resident{{ 's' if residents|length != 1 }}</span>
+                        </div>
+                        <i class="fi fi-rr-angle-down folder-arrow"></i>
+                    </button>
+
+                    <!-- FOLDER CONTENTS -->
+                    <div class="folder-contents">
+
+                        <!-- TABLE HEADER -->
+                        <div class="archive-table-header">
+                            <span>RESIDENT NAME</span>
+                            <span>ID NUMBER</span>
+                            <span>TYPE</span>
+                            <span>DURATION</span>
+                            <span>ACTION</span>
+                        </div>
+
+                        {% for resident in residents %}
+                        <div class="archive-card">
+                            <div class="arch-name">
+                                <strong>{{ resident.full_name }}</strong>
+                            </div>
+                            <div>{{ resident.id_number or '—' }}</div>
+                            <div>
+                                <span class="type-badge {{ resident.applicant_type }}">
+                                    {{ resident.applicant_type }}
+                                </span>
+                            </div>
+                            <div class="arch-dates">
+                                <span>{{ resident.start_date_display }}</span>
+                                <span class="date-arrow">→</span>
+                                <span>{{ resident.end_date_display }}</span>
+                            </div>
+                            <div>
+                                <button class="view-info-btn arch-view-btn"
+                                    data-resident-id="{{ resident.resident_id }}">
+                                    <i class="fi fi-rr-eye"></i>
+                                    View Info
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+
+            {% set has_any = grouped.values() | selectattr('__len__') | list %}
+            {% if not has_any %}
+            <div class="empty-archive">
+                <i class="fi fi-rr-archive"></i>
+                <p>No archived residents yet.</p>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-archive">
+                <i class="fi fi-rr-archive"></i>
+                <p>No archived residents yet.</p>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- VIEW INFO MODAL (reused from residents) -->
+<div class="assign-modal" id="viewInfoModal">
+    <div class="view-info-content">
+        <div class="assign-header">
+            <h2>Resident Information</h2>
+            <span class="close-modal" id="closeViewModal">&times;</span>
+        </div>
+
+        <div class="vi-section">
+            <h3 class="vi-section-title">Personal Information</h3>
+            <div class="vi-grid">
+                <div class="vi-item"><label>Full Name</label><p id="vi-fullname">—</p></div>
+                <div class="vi-item"><label>Applicant Number</label><p id="vi-appnum">—</p></div>
+                <div class="vi-item"><label>Age</label><p id="vi-age">—</p></div>
+                <div class="vi-item"><label>Sex</label><p id="vi-sex">—</p></div>
+                <div class="vi-item"><label>Email</label><p id="vi-email">—</p></div>
+                <div class="vi-item"><label>Contact Number</label><p id="vi-contact">—</p></div>
+                <div class="vi-item vi-full"><label>Permanent Address</label><p id="vi-permanent">—</p></div>
+                <div class="vi-item vi-full"><label>Current Address</label><p id="vi-current">—</p></div>
+            </div>
+        </div>
+
+        <div class="vi-section" id="vi-student-section">
+            <h3 class="vi-section-title">Student Information</h3>
+            <div class="vi-grid">
+                <div class="vi-item"><label>Student Number</label><p id="vi-student-num">—</p></div>
+                <div class="vi-item"><label>Program</label><p id="vi-program">—</p></div>
+                <div class="vi-item"><label>Year Level</label><p id="vi-year">—</p></div>
+            </div>
+        </div>
+
+        <div class="vi-section" id="vi-employee-section">
+            <h3 class="vi-section-title">Employee Information</h3>
+            <div class="vi-grid">
+                <div class="vi-item"><label>Employee Number</label><p id="vi-emp-num">—</p></div>
+                <div class="vi-item"><label>Department</label><p id="vi-dept">—</p></div>
+                <div class="vi-item"><label>Position</label><p id="vi-position">—</p></div>
+            </div>
+        </div>
+
+        <div class="vi-section">
+            <h3 class="vi-section-title">Residency</h3>
+            <div class="vi-grid">
+                <div class="vi-item"><label>Start Date</label><p id="vi-startdate">—</p></div>
+                <div class="vi-item"><label>End Date</label><p id="vi-enddate">—</p></div>
+                <div class="vi-item"><label>Assigned Room</label><p id="vi-room">—</p></div>
+                <div class="vi-item"><label>Date Applied</label><p id="vi-applied">—</p></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+document.getElementById('menu-btn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('hide');
+});
+
+// Folder toggle
+function toggleFolder(btn) {
+    const contents = btn.nextElementSibling;
+    const arrow = btn.querySelector('.folder-arrow');
+    const isOpen = contents.classList.contains('open');
+    contents.classList.toggle('open', !isOpen);
+    arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+// Open all folders by default
+document.querySelectorAll('.folder-contents').forEach(fc => {
+    fc.classList.add('open');
+    const arrow = fc.previousElementSibling.querySelector('.folder-arrow');
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+});
+
+// View Info Modal
+const viewInfoModal  = document.getElementById('viewInfoModal');
+const closeViewModal = document.getElementById('closeViewModal');
+
+closeViewModal.addEventListener('click', () => { viewInfoModal.style.display = 'none'; });
+window.addEventListener('click', e => { if (e.target === viewInfoModal) viewInfoModal.style.display = 'none'; });
+
+function setText(id, val) {
+    document.getElementById(id).textContent = val || '—';
+}
+
+document.querySelectorAll('.arch-view-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const residentId = this.dataset.residentId;
+        fetch('/get_resident_info/' + residentId)
+            .then(r => r.json())
+            .then(d => {
+                if (!d.success) return;
+                const fullName = [d.first_name, d.middle_name, d.last_name, d.extension_name].filter(Boolean).join(' ');
+                setText('vi-fullname',  fullName);
+                setText('vi-appnum',    d.applicant_number);
+                setText('vi-age',       d.age);
+                setText('vi-sex',       d.sex);
+                setText('vi-email',     d.email);
+                setText('vi-contact',   d.contact_number);
+                setText('vi-permanent', d.permanent_address);
+                setText('vi-current',   d.current_address);
+                setText('vi-startdate', d.start_date);
+                setText('vi-enddate',   d.end_date || '—');
+                setText('vi-room',      d.assigned_room || 'Unassigned');
+                setText('vi-applied',   d.created_at);
+
+                const isStudent = d.applicant_type.toLowerCase() === 'student';
+                document.getElementById('vi-student-section').style.display  = isStudent ? 'block' : 'none';
+                document.getElementById('vi-employee-section').style.display = isStudent ? 'none'  : 'block';
+
+                if (isStudent) {
+                    setText('vi-student-num', d.extra.student_number);
+                    setText('vi-program',     d.extra.program);
+                    setText('vi-year',        d.extra.year_level);
+                } else {
+                    setText('vi-emp-num',  d.extra.employee_number);
+                    setText('vi-dept',     d.extra.department);
+                    setText('vi-position', d.extra.position);
+                }
+
+                viewInfoModal.style.display = 'flex';
+            });
+    });
+});
+</script>
+</body>
+</html>

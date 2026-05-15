@@ -92,7 +92,9 @@
             </div>
 
             <div class="top-icons">
-                <i class="fi fi-rr-bell"></i>
+                <div class="notif-wrapper" id="notifBell">
+                    <i class="fi fi-rr-bell"></i>
+                </div>
                 <i class="fi fi-rr-envelope"></i>
             </div>
 
@@ -109,14 +111,14 @@
 
                     <select name="applicant_type">
                         <option value="all">All</option>
-                        <option value="Student">Students</option>
-                        <option value="Employee">Employee</option>
+                        <option value="Student" {% if request.args.get('applicant_type') == 'Student' %}selected{% endif %}>Students</option>
+                        <option value="Employee" {% if request.args.get('applicant_type') == 'Employee' %}selected{% endif %}>Employee</option>
                     </select>
 
                     <select name="sex">
                         <option value="all">All</option>
-                        <option value="Female">Female</option>
-                        <option value="Male">Male</option>
+                        <option value="Female" {% if request.args.get('sex') == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Male" {% if request.args.get('sex') == 'Male' %}selected{% endif %}>Male</option>
                     </select>
 
                     <button class="submit-btn" type="submit">
@@ -165,11 +167,12 @@
 
                 <div class="room-header">
 
-                    <h2>
-                        ROOM {{ room.room_number }}
-                    </h2>
+                    <div class="room-title">
+                        <h2>{{ room.building_name }}, Room {{ room.room_number }}</h2>
+                        <span class="room-type {{ room.applicant_type }}">{{ room.applicant_type }}</span>
+                    </div>
 
-                    <span>
+                    <span class="room-capacity">
                         Capacity:
                         {{ room.beds|length }}/{{ room.capacity }}
                     </span>

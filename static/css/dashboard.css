@@ -401,11 +401,38 @@ body::before {
 
 .recent ul {
     margin-top: 10px;
+    list-style: none;
 }
 
 .recent li {
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.activity-action {
+    font-size: 13px;
+    color: #333;
+    flex: 1;
+}
+
+.activity-time {
+    font-size: 11px;
+    color: #999;
+    white-space: nowrap;
+}
+
+.activity-loading,
+.activity-empty {
+    font-size: 13px;
+    color: #aaa;
+    padding: 12px 0;
 }
 
 .card,

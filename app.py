@@ -101,6 +101,10 @@ def send_interview_email(applicant, interview_date, interview_time):
                 <td style="padding:12px 16px;color:#888;font-weight:600;">Interview Time</td>
                 <td style="padding:12px 16px;color:#333;"><strong>{time_display}</strong></td>
             </tr>
+            <tr>
+                <td style="padding:12px 16px;color:#888;font-weight:600;">Interview Place</td>
+                <td style="padding:12px 16px;color:#333;"><strong>LNU Dorm Office</strong></td>
+            </tr>
         </table>
         <p style="color:#555;line-height:1.7;">
             <strong>Instructions:</strong><br>
@@ -125,7 +129,7 @@ def send_approved_email(applicant):
             <strong style="color:#2e7d32;">APPROVED</strong>. Congratulations!
         </p>
         <p style="color:#555;line-height:1.7;">
-            You will officially become a resident of the dormitory. Our team will be in
+            You will officially become a resident of the LNU Dormitory. Our team will be in
             touch with the next steps regarding your move-in schedule, room assignment,
             and other important details.
         </p>
@@ -228,6 +232,17 @@ def format_time(t):
         return t.strftime('%I:%M %p')
     return str(t)
 
+# ─── ACTIVITY LOG ─────────────────────────────────────────────────────────────
+
+def _log_activity(action):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO activity_log (action) VALUES (%s)", (action,))
+        mysql.connection.commit()
+        cur.close()
+    except Exception as e:
+        print(f"[Activity Log Error] {e}")
+
 # Canonical status values — normalises old lowercase DB entries on read
 _STATUS_MAP = {
     'approved and done': 'Approved',
@@ -315,17 +330,17 @@ def application():
         period_name = period[1]
 
         #GET DATA
-        first_name = request.form['first_name']
-        middle_name = request.form['middle_name']
-        last_name = request.form['last_name']
-        extension_name = request.form['extension_name']
-        age = request.form['age']
-        sex = request.form['sex']
-        contact_number = request.form['contact_number']
-        email = request.form['email']
-        permanent_address= request.form['permanent_address']
-        current_address = request.form['current_address']
-        applicant_type = request.form['applicant_type']
+        first_name        = request.form['first_name'].strip().title()
+        middle_name       = request.form['middle_name'].strip().title()
+        last_name         = request.form['last_name'].strip().title()
+        extension_name    = request.form['extension_name'].strip().title()
+        age               = request.form['age']
+        sex               = request.form['sex']
+        contact_number    = request.form['contact_number'].strip()
+        email             = request.form['email'].strip().lower()
+        permanent_address = request.form['permanent_address'].strip().title()
+        current_address   = request.form['current_address'].strip().title()
+        applicant_type    = request.form['applicant_type']
         
         cur.execute("""
             SELECT * FROM applications_tb 
@@ -374,9 +389,9 @@ def application():
         #STUDENT
         if applicant_type == "student":
             try:
-                student_number = request.form['student_number']
-                program = request.form['program']
-                year_level = request.form['year_level']
+                student_number = request.form['student_number'].strip().upper()
+                program = request.form['program'].strip().title()
+                year_level = request.form['year_level'].strip()
 
                 cur.execute("""
                     INSERT INTO student_info 
@@ -409,9 +424,9 @@ def application():
         #EMPLOYEE
         elif applicant_type == "employee":
             try:
-                employee_number = request.form['employee_number']
-                department = request.form['department']
-                position = request.form['position']
+                employee_number = request.form['employee_number'].strip().upper()
+                department = request.form['department'].strip().title()
+                position = request.form['position'].strip().title()
 
                 cur.execute("""
                     INSERT INTO employee_info
@@ -507,7 +522,7 @@ def dashboard():
     cur = mysql.connection.cursor()
 
     # your existing stats...
-    cur.execute("SELECT COUNT(*) FROM residents_tb")
+    cur.execute("SELECT COUNT(*) FROM residents_tb WHERE is_archived = 0 AND (status = 'Active' OR status IS NULL) AND end_date IS NULL")
     total_residents = cur.fetchone()[0]
 
     cur.execute("SELECT COUNT(*) FROM applications_tb WHERE status='Pending'")
@@ -519,7 +534,10 @@ def dashboard():
     cur.execute("""
         SELECT COUNT(*) FROM residents_tb
         LEFT JOIN payment_tb ON residents_tb.resident_id = payment_tb.resident_id
-        WHERE payment_tb.status = 'Pending' OR payment_tb.status IS NULL
+        WHERE (payment_tb.status = 'Pending' OR payment_tb.status IS NULL)
+        AND residents_tb.is_archived = 0
+        AND (residents_tb.status = 'Active' OR residents_tb.status IS NULL)
+        AND residents_tb.end_date IS NULL
     """)
     pending_payments = cur.fetchone()[0]
 
@@ -578,6 +596,9 @@ def residents():
         SELECT
             residents_tb.resident_id,
             residents_tb.bed_id,
+            residents_tb.start_date,
+            residents_tb.end_date,
+            residents_tb.is_archived,
             CONCAT(applications_tb.first_name, ' ', applications_tb.last_name) AS full_name,
             applications_tb.email,
             applications_tb.contact_number,
@@ -595,7 +616,7 @@ def residents():
         LEFT JOIN employee_info ON residents_tb.application_id = employee_info.application_id
         LEFT JOIN beds_tb ON residents_tb.bed_id = beds_tb.bed_id
         LEFT JOIN rooms_tb ON beds_tb.room_id = rooms_tb.room_id
-        WHERE 1=1
+        WHERE residents_tb.is_archived = 0
     """
     params = []
 
@@ -606,6 +627,8 @@ def residents():
     if sex != 'all':
         query += " AND applications_tb.sex = %s"
         params.append(sex)
+
+    query += " ORDER BY applications_tb.first_name ASC"
 
     cur.execute(query, params)
     residents = cur.fetchall()
@@ -639,6 +662,7 @@ def get_resident_info(resident_id):
         SELECT
             residents_tb.resident_id,
             residents_tb.start_date,
+            residents_tb.end_date,
             applications_tb.application_id,
             applications_tb.applicant_number,
             applications_tb.first_name,
@@ -674,6 +698,8 @@ def get_resident_info(resident_id):
     # Convert dates to strings for JSON
     if data.get('start_date'):
         data['start_date'] = data['start_date'].strftime('%B %d, %Y')
+    if data.get('end_date'):
+        data['end_date'] = data['end_date'].strftime('%B %d, %Y')
     if data.get('created_at'):
         data['created_at'] = data['created_at'].strftime('%B %d, %Y')
 
@@ -758,9 +784,69 @@ def add_resident():
     """, (resident_id,))
 
     mysql.connection.commit()
+
+    cur.execute("""
+        SELECT CONCAT(first_name, ' ', last_name) AS full_name
+        FROM applications_tb WHERE application_id = %s
+    """, (application_id,))
+    row = cur.fetchone()
     cur.close()
 
+    if row:
+        _log_activity(f"New resident added: {row[0]}")
+
     return redirect('/residents')
+
+
+@app.route('/set_end_date', methods=['POST'])
+def set_end_date():
+    data = request.get_json()
+    resident_id = data.get('resident_id')
+    end_date = data.get('end_date')
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Get bed_id before clearing it
+    cur.execute("SELECT bed_id, residents_tb.resident_id, CONCAT(a.first_name,' ',a.last_name) AS full_name FROM residents_tb JOIN applications_tb a ON residents_tb.application_id = a.application_id WHERE resident_id = %s", (resident_id,))
+    resident = cur.fetchone()
+
+    # Set end_date and mark inactive
+    cur.execute("UPDATE residents_tb SET end_date = %s, bed_id = NULL, status = 'Inactive' WHERE resident_id = %s", (end_date, resident_id))
+
+    # Free the bed
+    if resident and resident['bed_id']:
+        cur.execute("UPDATE beds_tb SET status = 'Available' WHERE bed_id = %s", (resident['bed_id'],))
+
+    mysql.connection.commit()
+    cur.close()
+
+    if resident:
+        _log_activity(f"Resident stay ended: {resident['full_name']} (End date: {end_date})")
+
+    return {'success': True}
+
+
+@app.route('/archive_resident', methods=['POST'])
+def archive_resident():
+    data = request.get_json()
+    resident_id = data.get('resident_id')
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Only archive if end_date is set
+    cur.execute("SELECT end_date, CONCAT(a.first_name,' ',a.last_name) AS full_name FROM residents_tb JOIN applications_tb a ON residents_tb.application_id = a.application_id WHERE resident_id = %s", (resident_id,))
+    resident = cur.fetchone()
+
+    if not resident or not resident['end_date']:
+        cur.close()
+        return {'success': False, 'message': 'Cannot archive a resident without an end date.'}
+
+    cur.execute("UPDATE residents_tb SET is_archived = 1, status = 'Inactive' WHERE resident_id = %s", (resident_id,))
+    mysql.connection.commit()
+    cur.close()
+
+    _log_activity(f"Resident archived: {resident['full_name']}")
+    return {'success': True}
 
 
 # Applicant Detail Page
@@ -898,6 +984,7 @@ def schedule_interview():
     applicant = _get_applicant_for_email(app_id)
     if applicant:
         send_interview_email(applicant, interview_date, interview_time)
+        _log_activity(f"Interview scheduled for {applicant['full_name']} on {interview_date}")
 
     return {'success': True, 'message': f'Interview {"created" if rows_affected == 1 else "updated"}!'}
 
@@ -931,10 +1018,14 @@ def update_interview_status():
     mysql.connection.commit()
     cur.close()
 
+    applicant = _get_applicant_for_email(app_id)
     if interview_status == 'no_show':
-        applicant = _get_applicant_for_email(app_id)
         if applicant:
             send_rejected_email(applicant)
+            _log_activity(f"Application rejected (no-show): {applicant['full_name']}")
+    elif interview_status == 'completed':
+        if applicant:
+            _log_activity(f"Interview completed: {applicant['full_name']}")
 
     return {'success': True, 'message': f'Interview status updated to {interview_status}'}
 
@@ -962,8 +1053,10 @@ def update_application_status():
     if applicant:
         if status == 'Approved':
             send_approved_email(applicant)
+            _log_activity(f"Application approved: {applicant['full_name']}")
         elif status == 'Rejected':
             send_rejected_email(applicant)
+            _log_activity(f"Application rejected: {applicant['full_name']}")
 
     return {'success': True}
 
@@ -973,14 +1066,23 @@ def update_application_status():
 @app.route('/rooms_bed')
 def rooms_bed():
 
+    applicant_type_filter = request.args.get('applicant_type', 'all')
+
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # ROOMS
-    cur.execute("""
-        SELECT *
+    # ROOMS — filter by building's applicant_type
+    room_query = """
+        SELECT rooms_tb.*, building_tb.building_name, building_tb.applicant_type
         FROM rooms_tb
-        ORDER BY room_number ASC
-    """)
+        JOIN building_tb ON rooms_tb.building_id = building_tb.building_id
+    """
+    room_params = []
+    if applicant_type_filter != 'all':
+        room_query += " WHERE building_tb.applicant_type = %s"
+        room_params.append(applicant_type_filter)
+    room_query += " ORDER BY building_tb.building_name ASC, rooms_tb.room_number ASC"
+
+    cur.execute(room_query, room_params)
     rooms = cur.fetchall()
 
     room_data = []
@@ -1017,6 +1119,8 @@ def rooms_bed():
             "room_id": room['room_id'],
             "room_number": room['room_number'],
             "capacity": room['capacity'],
+            "building_name": room['building_name'],
+            "applicant_type": room['applicant_type'],
             "beds": beds
         })
 
@@ -1031,6 +1135,8 @@ def rooms_bed():
         JOIN applications_tb
             ON residents_tb.application_id = applications_tb.application_id
         WHERE residents_tb.bed_id IS NULL
+        AND residents_tb.is_archived = 0
+        AND residents_tb.end_date IS NULL
         ORDER BY applications_tb.first_name ASC
     """)
     residents = cur.fetchall()
@@ -1071,9 +1177,9 @@ def add_building():
     ))
 
     mysql.connection.commit()
-
     cur.close()
 
+    _log_activity(f"New building added: {building_name} ({applicant_type})")
     return redirect('/rooms_bed')
 
 @app.route('/add_room', methods=['POST'])
@@ -1185,8 +1291,25 @@ def assign_bed():
     """, (bed_id,))
 
     mysql.connection.commit()
-
     cur.close()
+
+    try:
+        cur2 = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cur2.execute("""
+            SELECT CONCAT(a.first_name,' ',a.last_name) AS full_name,
+                   r.room_number, b.bed_number
+            FROM residents_tb rt
+            JOIN applications_tb a ON rt.application_id = a.application_id
+            JOIN beds_tb b ON b.bed_id = %s
+            JOIN rooms_tb r ON b.room_id = r.room_id
+            WHERE rt.resident_id = %s
+        """, (bed_id, resident_id))
+        info = cur2.fetchone()
+        cur2.close()
+        if info:
+            _log_activity(f"Bed assigned: {info['full_name']} → Room {info['room_number']} Bed {info['bed_number']}")
+    except Exception as e:
+        print(f"[Assign log error] {e}")
 
     next_url = request.form.get('next', '/rooms_bed')
     return redirect(next_url)
@@ -1199,6 +1322,9 @@ def dashboard_stats():
         SELECT COUNT(*) AS total FROM residents_tb
         JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
         WHERE LOWER(applications_tb.applicant_type) IN ('student', 'employee')
+        AND residents_tb.is_archived = 0
+        AND (residents_tb.status = 'Active' OR residents_tb.status IS NULL)
+        AND residents_tb.end_date IS NULL
     """)
     total_residents = cur.fetchone()['total']
 
@@ -1206,6 +1332,9 @@ def dashboard_stats():
         SELECT COUNT(*) AS total FROM residents_tb
         JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
         WHERE LOWER(applications_tb.applicant_type) = 'student'
+        AND residents_tb.is_archived = 0
+        AND (residents_tb.status = 'Active' OR residents_tb.status IS NULL)
+        AND residents_tb.end_date IS NULL
     """)
     student_count = cur.fetchone()['total']
 
@@ -1213,6 +1342,9 @@ def dashboard_stats():
         SELECT COUNT(*) AS total FROM residents_tb
         JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
         WHERE LOWER(applications_tb.applicant_type) = 'employee'
+        AND residents_tb.is_archived = 0
+        AND (residents_tb.status = 'Active' OR residents_tb.status IS NULL)
+        AND residents_tb.end_date IS NULL
     """)
     employee_count = cur.fetchone()['total']
 
@@ -1222,6 +1354,61 @@ def dashboard_stats():
         'total_residents': total_residents,
         'student_count':   student_count,
         'employee_count':  employee_count
+    }
+
+
+@app.route('/api/new_applications_count')
+def new_applications_count():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT COUNT(*) FROM applications_tb WHERE status = 'Pending'")
+    count = cur.fetchone()[0]
+    cur.close()
+    return {'count': count}
+
+@app.route('/api/pending_applications')
+def pending_applications_api():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT application_id,
+               applicant_number,
+               CONCAT(first_name, ' ', last_name) AS full_name,
+               applicant_type,
+               created_at
+        FROM applications_tb
+        WHERE status = 'Pending'
+        ORDER BY created_at DESC
+        LIMIT 15
+    """)
+    rows = cur.fetchall()
+    cur.close()
+    return {'applications': [
+        {
+            'id': r['application_id'],
+            'number': r['applicant_number'],
+            'name': r['full_name'],
+            'type': r['applicant_type'],
+            'date': r['created_at'].strftime('%b %d, %Y')
+        }
+        for r in rows
+    ]}
+
+@app.route('/api/recent_activities')
+def recent_activities():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT action, created_at
+        FROM activity_log
+        WHERE DATE(created_at) = CURDATE()
+        ORDER BY created_at DESC
+        LIMIT 10
+    """)
+    rows = cur.fetchall()
+    cur.close()
+    return {
+        'activities': [
+            {'action': r['action'], 'time': r['created_at'].strftime('%b %d, %Y %I:%M %p')}
+            for r in rows
+        ]
     }
 
 
@@ -1250,6 +1437,9 @@ def payments():
         LEFT JOIN rooms_tb ON beds_tb.room_id = rooms_tb.room_id
         LEFT JOIN payment_tb ON residents_tb.resident_id = payment_tb.resident_id
         WHERE applications_tb.applicant_type IN ('student', 'Student', 'employee', 'Employee')
+        AND residents_tb.is_archived = 0
+        AND (residents_tb.status = 'Active' OR residents_tb.status IS NULL)
+        AND residents_tb.end_date IS NULL
     """
     params = []
 
@@ -1295,8 +1485,19 @@ def mark_paid():
             VALUES (%s, 'Paid', %s)
         """, (resident_id, payment_date))
 
+    cur.execute("""
+        SELECT CONCAT(a.first_name,' ',a.last_name) AS full_name
+        FROM residents_tb rt
+        JOIN applications_tb a ON rt.application_id = a.application_id
+        WHERE rt.resident_id = %s
+    """, (resident_id,))
+    row = cur.fetchone()
+
     mysql.connection.commit()
     cur.close()
+
+    if row:
+        _log_activity(f"Payment marked as Paid: {row[0]}")
 
     return {'success': True}
 
@@ -1363,5 +1564,60 @@ def test_email():
         return {'success': False, 'message': 'Resend API call failed — check server logs'}, 500
 
 
+@app.route('/settings')
+def settings():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch all archived residents with their info, including the period they applied in
+    cur.execute("""
+        SELECT
+            residents_tb.resident_id,
+            residents_tb.start_date,
+            residents_tb.end_date,
+            CONCAT(applications_tb.first_name, ' ', applications_tb.last_name) AS full_name,
+            applications_tb.applicant_type,
+            COALESCE(student_info.student_number, employee_info.employee_number) AS id_number,
+            COALESCE(application_period.name, 'Unassigned Period') AS period_name,
+            CASE
+                WHEN beds_tb.bed_id IS NOT NULL
+                THEN CONCAT('Room ', rooms_tb.room_number, ' - Bed ', beds_tb.bed_number)
+                ELSE NULL
+            END AS assigned_room
+        FROM residents_tb
+        LEFT JOIN applications_tb ON residents_tb.application_id = applications_tb.application_id
+        LEFT JOIN application_period ON applications_tb.period_id = application_period.period_id
+        LEFT JOIN student_info ON residents_tb.application_id = student_info.application_id
+        LEFT JOIN employee_info ON residents_tb.application_id = employee_info.application_id
+        LEFT JOIN beds_tb ON residents_tb.bed_id = beds_tb.bed_id
+        LEFT JOIN rooms_tb ON beds_tb.room_id = rooms_tb.room_id
+        WHERE residents_tb.is_archived = 1
+        ORDER BY application_period.start_date ASC, residents_tb.start_date ASC
+    """)
+    archived = cur.fetchall()
+
+    cur.close()
+
+    # Group archived residents by their application period
+    grouped = {}
+    for resident in archived:
+        period_name = resident['period_name']
+        if period_name not in grouped:
+            grouped[period_name] = []
+        grouped[period_name].append(resident)
+
+    # Format dates for display
+    for resident in archived:
+        if resident.get('start_date'):
+            resident['start_date_display'] = resident['start_date'].strftime('%b %d, %Y')
+        else:
+            resident['start_date_display'] = '—'
+        if resident.get('end_date'):
+            resident['end_date_display'] = resident['end_date'].strftime('%b %d, %Y')
+        else:
+            resident['end_date_display'] = '—'
+
+    return render_template('settings.html', grouped=grouped)
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

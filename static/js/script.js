@@ -100,16 +100,155 @@ function closeModal() {
     window.location.href = "/";
 }
 
-//DASHBOARD
-// TOGGLE SIDEBAR
-const menuBtn = document.getElementById("menu-btn");
-const sidebar = document.getElementById("sidebar");
+// NOTIFICATION STYLES
+(function() {
+    const s = document.createElement('style');
+    s.textContent = `
+        .notif-wrapper { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+        .notif-badge {
+            position: absolute;
+            top: -6px; right: -8px;
+            background: #e53935;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            font-family: "Poppins", sans-serif;
+            line-height: 1;
+        }
+        .notif-dropdown {
+            display: none;
+            position: absolute;
+            top: 36px; right: 0;
+            width: 320px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .notif-dropdown.open { display: block; }
+        .notif-drop-header {
+            padding: 14px 18px;
+            background: #3b3b98;
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: "Poppins", sans-serif;
+        }
+        .notif-list { max-height: 320px; overflow-y: auto; }
+        .notif-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 12px 18px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+        .notif-item:hover { background: #f5f5ff; }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            font-family: "Poppins", sans-serif;
+        }
+        .notif-item-meta {
+            font-size: 11px;
+            color: #999;
+            font-family: "Poppins", sans-serif;
+        }
+        .notif-empty {
+            padding: 24px 18px;
+            text-align: center;
+            color: #bbb;
+            font-size: 13px;
+            font-family: "Poppins", sans-serif;
+        }
+        .notif-footer {
+            padding: 10px 18px;
+            text-align: center;
+            border-top: 1px solid #f0f0f0;
+        }
+        .notif-footer a {
+            font-size: 12px;
+            color: #3b3b98;
+            font-weight: 600;
+            text-decoration: none;
+            font-family: "Poppins", sans-serif;
+        }
+    `;
+    document.head.appendChild(s);
+})();
 
-if (menuBtn && sidebar) {
-    menuBtn.addEventListener("click", () => {
-        sidebar.classList.toggle("hide");
+// NOTIFICATION BELL
+const notifBell = document.getElementById('notifBell');
+if (notifBell) {
+    // Build dropdown
+    const dropdown = document.createElement('div');
+    dropdown.className = 'notif-dropdown';
+    dropdown.innerHTML = `
+        <div class="notif-drop-header">New Applications</div>
+        <div class="notif-list" id="notifList"><div class="notif-empty">Loading...</div></div>
+        <div class="notif-footer"><a href="/applications?status=Pending">View all applications →</a></div>
+    `;
+    notifBell.appendChild(dropdown);
+
+    // Load count + list
+    function loadNotifications() {
+        fetch('/api/pending_applications')
+            .then(r => r.json())
+            .then(data => {
+                const list = document.getElementById('notifList');
+                const apps = data.applications;
+
+                // Update badge
+                const existing = notifBell.querySelector('.notif-badge');
+                if (existing) existing.remove();
+                if (apps.length > 0) {
+                    const badge = document.createElement('span');
+                    badge.className = 'notif-badge';
+                    badge.textContent = apps.length;
+                    notifBell.insertBefore(badge, dropdown);
+                }
+
+                // Fill list
+                if (apps.length === 0) {
+                    list.innerHTML = '<div class="notif-empty">No pending applications.</div>';
+                } else {
+                    list.innerHTML = apps.map(a => `
+                        <a class="notif-item" href="/application/${a.id}">
+                            <span class="notif-item-name">${a.name}</span>
+                            <span class="notif-item-meta">${a.type} &bull; Applied ${a.date}</span>
+                        </a>
+                    `).join('');
+                }
+            });
+    }
+
+    loadNotifications();
+
+    // Toggle dropdown on click
+    notifBell.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', function() {
+        dropdown.classList.remove('open');
     });
 }
+
+//DASHBOARD
 
 // SAMPLE CHART
 
@@ -179,7 +318,8 @@ const menuItems = document.querySelectorAll(".menu li");
 
 menuItems.forEach(item => {
     item.addEventListener("click", () => {
-        document.querySelector(".active").classList.remove("active");
+        const activeItem = document.querySelector(".active");
+        if (activeItem) activeItem.classList.remove("active");
         item.classList.add("active");
     });
 });
@@ -187,13 +327,15 @@ menuItems.forEach(item => {
 // Search filter (basic demo)
 const searchInput = document.querySelector(".search-group input");
 
-searchInput.addEventListener("keyup", () => {
-    const value = searchInput.value.toLowerCase();
-    const cards = document.querySelectorAll(".card");
+if (searchInput) {
+    searchInput.addEventListener("keyup", () => {
+        const value = searchInput.value.toLowerCase();
+        const cards = document.querySelectorAll(".card");
 
-    cards.forEach(card => {
-        card.style.display = card.innerText.toLowerCase().includes(value)
-            ? "grid"
-            : "none";
+        cards.forEach(card => {
+            card.style.display = card.innerText.toLowerCase().includes(value)
+                ? "grid"
+                : "none";
+        });
     });
-});
+}
